@@ -1,0 +1,18 @@
+Can't exec "/usr/bin/python": No such file or directory at
+	/usr/share/perl/5.30/IPC/Open3.pm line 281 (#1)
+    (W exec) A system(), exec(), or piped open call could not execute the
+    named program for the indicated reason.  Typical reasons include: the
+    permissions were wrong on the file, the file wasn't found in
+    $ENV{PATH}, the executable in question was compiled for another
+    architecture, or the #! line in a script points to an interpreter that
+    can't be run for similar reasons.  (Or maybe your system doesn't support
+    #! at all.)
+    
+Uncaught exception from user code:
+	open2: exec of /usr/bin/python failed: No such file or directory at /home/lwd/code/TopoScope.code/asrank.pl line 838.
+	IPC::Open3::_open3("open2", GLOB(0x55df19ef1da0), GLOB(0x55df19ef1d88), ">&STDERR", "/usr/bin/python") called at /usr/share/perl/5.30/IPC/Open2.pm line 117
+	IPC::Open2::open2(GLOB(0x55df19ef1d88), GLOB(0x55df19ef1da0), "/usr/bin/python") called at /home/lwd/code/TopoScope.code/asrank.pl line 838
+	main::python_clique(6939, 174, 3356, 3549, 39533, 24482, 35280, 7018, ...) called at /home/lwd/code/TopoScope.code/asrank.pl line 906
+	main::infer_clique(10) called at /home/lwd/code/TopoScope.code/asrank.pl line 1013
+[mkfile]make file /home/lwd/RIB.test/path.test/pc20201201.v4.u.path.tmp
+python3: can't open file 'toposcope.py': [Errno 2] No such file or directory

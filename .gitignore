@@ -1,0 +1,10 @@
+**/*.sqlite3
+**/.DS_Store
+
+TopoScope/
+Apollo/
+log/
+testfoleder/
+testfoledercopy/
+.vstags
+.vscode/
