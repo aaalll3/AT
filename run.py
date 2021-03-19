@@ -2,13 +2,14 @@ import os
 import logging
 import resource
 import networkx as nx
+import json
+import pandas as pd
 
 from random import shuffle
 from collections import defaultdict
 from os.path import abspath, join
 from networkx.algorithms.centrality import group
 from TopoScope.topoFusion import TopoFusion
-from Apollo.Stage_2 import ap_2
 from rib_to_read import url_form, download_rib, worker, unzip_rib
 
 
@@ -18,7 +19,8 @@ logging.basicConfig(filename=log_location,level=logging.DEBUG)
 
 # To make dataset
 class Download():
-    
+    def __init__(self) -> None:
+        pass
 
 # To infer
 
@@ -30,9 +32,9 @@ class Run():
         self.prob=prob
 
     def run(self):
-        if self.struc is None or /
-            self.infer is None or /
-            self.voter is None or / 
+        if self.struc is None or \
+            self.infer is None or \
+            self.voter is None or \
             self.prob is None:
             logging.warn('Struc, Infer, Voter and Prob is needed')
             return
@@ -61,12 +63,12 @@ class Struc():
         self.pre_VP =set()
         self.sec_VP = set()
         self.VPGroup = list()
-        self.file_num = file_num
-        self.group_dir = group_dir
+        self.file_num = None
+        self.group_dir = None
 
         self.group_size=25
         # Apollo
-        self.link_relation=set()
+        self.link_relation=dict()
         self.non_tier_1 =[]
         self.wrong_path = []
         # IRR
@@ -134,19 +136,19 @@ class Struc():
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
             if(ASes[i+1],ASes[i]) in self.irr_c2p:
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(-1)
-            if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in irr_p2p:
+            if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(0)
-            if ASes[i] in tier_1 and ASes[i+1] in tier_1:
+            if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(0)
         idx = -1
         cnt = 0
-	    for i in range(len(asn)):
-	        if asn[i] in tier_1:
+        for i in range(len(ASes)):
+	        if ASes[i] in self.tier_1:
 	            idx = i
 	            cnt+=1
-        if cnt>=2 and ASes[idx-1] not in tier_1:
+        if cnt>=2 and ASes[idx-1] not in self.tier_1:
             self.wrong_path.append(ASes)
-            continue
+            return
         if idx>=2:
             for i in range(idx-1):
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
@@ -158,39 +160,39 @@ class Struc():
     
     def write_AP(self):
         for it in range(5):
-            for asn in non_tier_1:
+            for asn in self.non_tier_1:
                 idx_11 = 0
                 idx_1 = 0
                 idx_0 = 0
                 for i in range(len(asn)-1):
-                    if (asn[i],asn[i+1]) in link_relation.keys() \
-                        and list(link_relation[(asn[i],asn[i+1])]) == [-1]:
+                    if (asn[i],asn[i+1]) in self.link_relation.keys() \
+                        and list(self.link_relation[(asn[i],asn[i+1])]) == [-1]:
                         idx_11 = i
-                    if (asn[i],asn[i+1]) in link_relation.keys() \
-                        and list(link_relation[(asn[i],asn[i+1])]) == [0]:
+                    if (asn[i],asn[i+1]) in self.link_relation.keys() \
+                        and list(self.link_relation[(asn[i],asn[i+1])]) == [0]:
                         idx_0 = i
-                    if (asn[i],asn[i+1]) in link_relation.keys() \
-                        and list(link_relation[(asn[i],asn[i+1])]) == [1]:
+                    if (asn[i],asn[i+1]) in self.link_relation.keys() \
+                        and list(self.link_relation[(asn[i],asn[i+1])]) == [1]:
                         idx_1 = i
                 if idx_11 !=0:
                     for i in range(idx_1+1,len(asn)-1):
-                        link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
+                        self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
                 if idx_1 !=0:
                     for i in range(idx_0-1):
-                        link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
+                        self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
                 if idx_0 !=0:
                     if idx_0>=2:
                         for i in range(idx_0-1):
-                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
+                            self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
                     if idx_0<=len(asn)-2:
                         for i in range(idx_0+1,len(asn)-1):
-                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
+                            self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
         
             p2c_cnt = 0
             c2p_cnt = 0
             p2p_cnt = 0
             dulp = 0
-            for k,v in link_relation.items():
+            for k,v in self.link_relation.items():
                 if len(v)>=2:
                     dulp +=1
                     continue
@@ -206,7 +208,7 @@ class Struc():
             print(dulp)
         result = dict()
         conflict = 0
-        for k,v in link_relation.items():
+        for k,v in self.link_relation.items():
             if len(v)>1 and 0 in v:
                 result[k] = 0
             elif len(v) == 1:
@@ -220,7 +222,7 @@ class Struc():
         f.write(str(result))
         f.close()
         f = open('./wrong_path.txt','w')
-        f.write(str(wrong_path))
+        f.write(str(self.wrong_path))
         f.close()
 
     def set_VP_type(self):
@@ -261,9 +263,9 @@ class Struc():
 
     def divide_TS(self,group_size):
         group_cnt = 0
-        pre_VP = list(self.struc.pre_VP)
-        sec_VP = list(self.struc.sec_VP)
-        partial_VP = list(self.struc.partialVP)
+        pre_VP = list(self.pre_VP)
+        sec_VP = list(self.sec_VP)
+        partial_VP = list(self.partialVP)
         # shuffle the premier VP, second VP, and the rest
         pre_num = len(pre_VP)
         sec_num = len(sec_VP)
@@ -287,7 +289,7 @@ class Struc():
         for i in range(len(self.VPGroup)):
             wf = open(self.dir + 'fullVPPath' + str(i) + '.txt','w')
             for VP in self.VPGroup[i]:
-                for path in self.struc.VP2path:
+                for path in self.VP2path:
                     wf.write(path + '\n')
             wf.close()
 
@@ -304,20 +306,20 @@ class Struc():
     def infer_AP(self,path_file):
         #TODO
         #need a normal path
-        paths = BgpPaths()
-        paths.extract_ixp(ixp_file)
-        paths.parse_bgp_paths('./sanitized_rib.txt')
+        # paths = BgpPaths()
+        # paths.extract_ixp(ixp_file)
+        # paths.parse_bgp_paths('./sanitized_rib.txt')
         links = set()
-        with open(path_file,'r') as f:
-            for line in f:
-                if '|' in line:
-                    ASes = line.split("|")
-                    for i in range(len(ASes)-1):
-                        if (ASes[i], ASes[i+1]) not in links:
-                            links.add((ASes[i], ASes[i+1]))
-                    for i in range(len(ASes),0,-1):
-                        if (ASes[i], ASes[i-1]) not in links:
-                            links.add((ASes[i], ASes[i-1]))
+        f = open(path_file,'r')
+        for line in f:
+            if '|' in line:
+                ASes = line.split("|")
+                for i in range(len(ASes)-1):
+                    if (ASes[i], ASes[i+1]) not in links:
+                        links.add((ASes[i], ASes[i+1]))
+                for i in range(len(ASes),0,-1):
+                    if (ASes[i], ASes[i-1]) not in links:
+                        links.add((ASes[i], ASes[i-1]))
         tier1s = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '4436', '5511', '6453', '6461', '6762', '7018', '12956', '3549']
         g = nx.Graph()
         for link in links:
@@ -366,9 +368,9 @@ class Struc():
             node_fea.loc[k,'same-distance'] =v
         #每个link被多少个vp观测到
         vp_cnt = {}
-        for path in paths.forward_paths:
-            if '|' in path:
-                ASes = path.split("|")
+        for line in f:
+            if '|' in line:
+                ASes = line.split("|")
                 vp = ASes[0]
                 for i in range(len(ASes)-1):
                     if (ASes[i], ASes[i+1]) not in vp_cnt:
@@ -475,6 +477,7 @@ class Struc():
 
     def vote_ap(self):
         # vote from all files
+        pass
 
 class Infer():
     def __init__(self) -> None:
