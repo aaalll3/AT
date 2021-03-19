@@ -1,7 +1,7 @@
 **/*.sqlite3
 **/.DS_Store
 
-TopoScope/
+# TopoScope/
 Apollo/
 log/
 testfoleder/
