@@ -11,19 +11,26 @@ from os.path import abspath, join
 from networkx.algorithms.centrality import group
 from TopoScope.topoFusion import TopoFusion
 from rib_to_read import url_form, download_rib, worker, unzip_rib
+from logging import warn,debug,info
 
+# TODO
+# logging
+# path of files
+# debug
 
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
-log_location = abspath(join('.','log'))
-logging.basicConfig(filename=log_location,level=logging.DEBUG)
 
+log_location = abspath(join('.','log'))
+logging.basicConfig(filename=log_location,level=logging.INFO)
+
+
+# TODO
 # To make dataset
 class Download():
     def __init__(self) -> None:
         pass
 
 # To infer
-
 class Run():
     def __init__(self, struc=None,infer=None,voter=None,prob=None) -> None:
         self.struc=struc
@@ -39,11 +46,10 @@ class Run():
             logging.warn('Struc, Infer, Voter and Prob is needed')
             return
 
-
-
 class Struc():
     def __init__(self,path_file,boost_file,irr_file) -> None:
         # base structure of graph
+        debug('[Struc.init]initializing',stack_info=True)
         self.clique = set(['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
             '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956'])
         self.tier_1 = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
@@ -82,6 +88,7 @@ class Struc():
         #TODO
         self.dir=None
 
+        info('[Struc.init]loading informations')
         self.get_relation()
         self.cal_hierarchy()
         self.set_VP_type()
@@ -90,6 +97,8 @@ class Struc():
         self.divide_TS(self.group_size)
 
     def get_relation(self):
+        debug('[Struc.get_relation]',stack_info=True)
+        info('[Struc.get_relation]TS: load initial infer for hierarchy')
         with open(self.boost_file,'r') as file:
             for line in file:
                 if not line.startswith('#'):
@@ -104,6 +113,8 @@ class Struc():
                         self.peer[asn2].add(asn1)
 
     def cal_hierarchy(self):
+        debug('[Struc.cal_hierarchy]',stack_info=True)
+        info('[Struc.cal_hieracrchy]TS: discrime different type of ASes')
         allNodes = set()
         for node in self.clique:
             for cus in self.customer[node]:
@@ -121,6 +132,7 @@ class Struc():
             allNodes.add(node)
     
     def check_hierarchy(self,asn):
+        info(f'[Struc.check_hierarchy]TS: find results of hierarchy for {asn}')
         if asn in self.clique:
             return 0
         elif asn in self.high:
@@ -131,6 +143,7 @@ class Struc():
             return -1
     
     def process_line_AP(self,ASes):
+        info(f'[Struc.process_line_AP]AP: process AS path {ASes}')
         for i in range(len(ASes)-1):
             if(ASes[i],ASes[i+1]) in self.irr_c2p:
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
@@ -143,9 +156,9 @@ class Struc():
         idx = -1
         cnt = 0
         for i in range(len(ASes)):
-	        if ASes[i] in self.tier_1:
-	            idx = i
-	            cnt+=1
+            if ASes[i] in self.tier_1:
+                idx = i
+                cnt+=1
         if cnt>=2 and ASes[idx-1] not in self.tier_1:
             self.wrong_path.append(ASes)
             return
@@ -159,6 +172,7 @@ class Struc():
             self.non_tier_1.append(ASes)
     
     def write_AP(self):
+        info('[Struc.write_AP]AP: iteration and output c2f result')
         for it in range(5):
             for asn in self.non_tier_1:
                 idx_11 = 0
@@ -216,6 +230,7 @@ class Struc():
             else:
                 conflict +=1
         print('conflict: ' + str(conflict))
+        #TODO
         #dst
         print('saving')
         f = open('./stage1_res.txt','w')
@@ -226,6 +241,8 @@ class Struc():
         f.close()
 
     def set_VP_type(self):
+        debug('[Struc.set_VP_type]',stack_info=True)
+        info('[Struc.set_VP_type]set VP type for TS and run c2f for AP')
         with open(self.path_file) as f:
             for line in f:
                 ASes = line.strip().split('|')
@@ -245,6 +262,8 @@ class Struc():
         self.write_AP()  # part1 over for Apollo
 
     def read_irr(self,irr_path):
+        debug('[Struc.read_irr]',stack_info=True)
+        info('[Struc.read_irr]read irr info')
         with open(irr_path,'r') as f:
             lines = f.readlines()
         for line in lines:
@@ -255,6 +274,8 @@ class Struc():
                 self.irr_p2p.add((tmp[0],tmp[1]))
 
     def boost(self,path_file):
+        debug('[Struc.boost]',stack_info=True)
+        info('[Struc.boost]run initial asrank for TS')
         name = path_file.split('.')[0]
         dst = name+'.rel'
         command= f'perl asrank.pl {path_file} > {dst}'
@@ -262,6 +283,8 @@ class Struc():
         return dst
 
     def divide_TS(self,group_size):
+        debug('[Struc.divide_TS]',stack_info=True)
+        info(f'[Struc.divide_TS]divide VP into {group_size} groups for voting')
         group_cnt = 0
         pre_VP = list(self.pre_VP)
         sec_VP = list(self.sec_VP)
@@ -294,11 +317,15 @@ class Struc():
             wf.close()
 
     def infer_TS(self):
+        debug('[Struc.infer_TS]',stack_info=True)
+        info('[Struc.infer_TS]run asrank for seperated group')
         for i in range(len(self.VPGroup)):
             os.system("perl asrank.pl " + self.dir + "fullVPPath" + str(i) + ".txt > " 
             + self.dir + "fullVPRel" + str(i) + ".txt")
 
-    def vote_ts(self):
+    def vote_TS(self):
+        debug('[Struc.vote_TS]',stack_info=True)
+        info('[Struc.vote_TS]')
         # vote 
         self.topoFusion= TopoFusion(self.file_num,self.group_dir)
         self.topoFusion.getTopoProb()
