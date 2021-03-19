@@ -47,10 +47,17 @@ class Run():
             return
 
 # TS: boost > get_relation > cal_hierarchy > set_VP_type > divide_TS > infer_TS > Vote_TS
-# AP: process_line_AP > write_AP > vote_AP > infer_AP
+# AP: read irr > process_line_AP > write_AP > vote_AP > infer_AP
+
+# first stage: ASrank/C2L
+#     TS_F:boost > get_realation > cal_hierarchy > set_VP_type > divide_TS > infer_TS
+#     AP_F:read irr > process_line_AP > write_AP
+# Second stage: vote in three way
+#     TS_S:infer_TS > vote_TS
+#     AP_S:vote_AP > infer_AP
 
 class Struc():
-    def __init__(self,path_file,boost_file,irr_file) -> None:
+    def __init__(self,path_file=None,boost_file=None,irr_file=None) -> None:
         # base structure of graph
         debug('[Struc.init]initializing',stack_info=True)
         self.clique = set(['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
@@ -92,12 +99,6 @@ class Struc():
         self.dir=None
 
         info('[Struc.init]loading informations')
-        self.get_relation()
-        self.cal_hierarchy()
-        self.set_VP_type()
-        self.read_irr(irr_file)
-
-        self.divide_TS(self.group_size)
 
     #boost file
     def get_relation(self, boost_file):
@@ -522,3 +523,17 @@ class Struc():
 class Infer():
     def __init__(self) -> None:
         pass
+
+if __name__=='__main__':
+
+    
+    group_size=25
+    boost_file=''
+
+    struc =Struc()
+    struc.read_irr(irr_file)
+    struc.get_relation(boost_file)
+    struc.cal_hierarchy()
+    struc.set_VP_type()
+    struc.divide_TS(group_size)
+    struc.infer_TS()
