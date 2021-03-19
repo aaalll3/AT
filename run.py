@@ -14,7 +14,7 @@ from rib_to_read import url_form, download_rib, worker, unzip_rib
 from logging import warn,debug,info
 
 # TODO
-# logging
+# logging|done
 # path of files
 # debug
 
@@ -45,6 +45,9 @@ class Run():
             self.prob is None:
             logging.warn('Struc, Infer, Voter and Prob is needed')
             return
+
+# TS: boost > get_relation > cal_hierarchy > set_VP_type > divide_TS > infer_TS > Vote_TS
+# AP: process_line_AP > write_AP > vote_AP > infer_AP
 
 class Struc():
     def __init__(self,path_file,boost_file,irr_file) -> None:
@@ -96,10 +99,11 @@ class Struc():
 
         self.divide_TS(self.group_size)
 
-    def get_relation(self):
+    #boost file
+    def get_relation(self, boost_file):
         debug('[Struc.get_relation]',stack_info=True)
         info('[Struc.get_relation]TS: load initial infer for hierarchy')
-        with open(self.boost_file,'r') as file:
+        with open(boost_file,'r') as file:
             for line in file:
                 if not line.startswith('#'):
                     line=line.strip()
@@ -112,6 +116,7 @@ class Struc():
                         self.peer[asn1].add(asn2)
                         self.peer[asn2].add(asn1)
 
+    #
     def cal_hierarchy(self):
         debug('[Struc.cal_hierarchy]',stack_info=True)
         info('[Struc.cal_hieracrchy]TS: discrime different type of ASes')
@@ -171,7 +176,9 @@ class Struc():
         if idx == -1:
             self.non_tier_1.append(ASes)
     
-    def write_AP(self):
+    # AP c2l out/w out
+    def write_AP(self, AP_stage1_file ):
+        debug('[Struc.write_AP]',stack_info=True)
         info('[Struc.write_AP]AP: iteration and output c2f result')
         for it in range(5):
             for asn in self.non_tier_1:
@@ -233,17 +240,19 @@ class Struc():
         #TODO
         #dst
         print('saving')
-        f = open('./stage1_res.txt','w')
+        wp_file = join(AP_stage1_file,'wrong')
+        f = open(AP_stage1_file,'w')
         f.write(str(result))
         f.close()
-        f = open('./wrong_path.txt','w')
+        f = open(wp_file,'w')
         f.write(str(self.wrong_path))
         f.close()
 
-    def set_VP_type(self):
+    # path file, AP_out
+    def set_VP_type(self,path_file,AP_stage1_file):
         debug('[Struc.set_VP_type]',stack_info=True)
         info('[Struc.set_VP_type]set VP type for TS and run c2f for AP')
-        with open(self.path_file) as f:
+        with open(path_file) as f:
             for line in f:
                 ASes = line.strip().split('|')
                 for AS in ASes:
@@ -259,8 +268,9 @@ class Struc():
                     self.sec_VP.add(VP)
             else:
                 self.partialVP.add(VP)
-        self.write_AP()  # part1 over for Apollo
+        self.write_AP(AP_stage1_file)  # part1 over for Apollo
 
+    # irr_file
     def read_irr(self,irr_path):
         debug('[Struc.read_irr]',stack_info=True)
         info('[Struc.read_irr]read irr info')
@@ -282,6 +292,7 @@ class Struc():
         os.system(command)
         return dst
 
+    # TS divided file
     def divide_TS(self,group_size):
         debug('[Struc.divide_TS]',stack_info=True)
         info(f'[Struc.divide_TS]divide VP into {group_size} groups for voting')
@@ -330,7 +341,10 @@ class Struc():
         self.topoFusion= TopoFusion(self.file_num,self.group_dir)
         self.topoFusion.getTopoProb()
 
-    def infer_AP(self,path_file):
+    # path_file, peeringdb file, AP vote out
+    def infer_AP(self,path_file,peeringdb_file,AP_stage1_file):
+        debug('[Struc.infer_AP]',stack_info=True)
+        info('[Struc.infer_AP]infer AP')
         #TODO
         #need a normal path
         # paths = BgpPaths()
@@ -411,7 +425,6 @@ class Struc():
         #ixp
         ixp_dict = {}
         colocated_ixp = defaultdict(int)
-        peeringdb_file = './peeringdb_2019.json'
         # PeeringDB json dump
         if peeringdb_file.endswith('json'):
             with open(peeringdb_file) as f:
