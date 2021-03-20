@@ -96,7 +96,7 @@ class Struc():
         self.path_file=path_file
         self.irr_file=irr_file
         #TODO
-        self.dir=None
+        # self.dir=None
 
         info('[Struc.init]loading informations')
 
@@ -250,7 +250,7 @@ class Struc():
         f.close()
 
     # path file, AP_out
-    def set_VP_type(self,path_file,AP_stage1_file):
+    def set_VP_type(self,path_file):
         debug('[Struc.set_VP_type]',stack_info=True)
         info('[Struc.set_VP_type]set VP type for TS and run c2f for AP')
         with open(path_file) as f:
@@ -259,7 +259,7 @@ class Struc():
                 for AS in ASes:
                     self.VP2AS[ASes[0]].add(AS)
                 self.VP2path[ASes[0]].add(line.strip())
-                self.process_line_AP(ASes) # Apollo
+                # self.process_line_AP(ASes) # Apollo
         for VP in self.VP2AS.keys():
             if len(self.VP2AS[VP]) > 65000*0.8:
                 self.fullVP.add(VP)
@@ -269,6 +269,15 @@ class Struc():
                     self.sec_VP.add(VP)
             else:
                 self.partialVP.add(VP)
+        # self.write_AP(AP_stage1_file)  # part1 over for Apollo
+
+    def apollo(self,path_file,AP_stage1_file):
+        debug('[Struc.apollo]',stack_info=True)
+        info('[Struc.apollo]run c2f for AP')
+        with open(path_file) as f:
+            for line in f:
+                ASes = line.strip().split('|')
+                self.process_line_AP(ASes) # Apollo
         self.write_AP(AP_stage1_file)  # part1 over for Apollo
 
     # irr_file
@@ -294,7 +303,7 @@ class Struc():
         return dst
 
     # TS divided file
-    def divide_TS(self,group_size):
+    def divide_TS(self,group_size,dir):
         debug('[Struc.divide_TS]',stack_info=True)
         info(f'[Struc.divide_TS]divide VP into {group_size} groups for voting')
         group_cnt = 0
@@ -322,24 +331,24 @@ class Struc():
             self.VPGroup.append(pre_VP + sec_VP + partial_VP)
 
         for i in range(len(self.VPGroup)):
-            wf = open(self.dir + 'fullVPPath' + str(i) + '.txt','w')
+            wf = open(dir + 'fullVPPath' + str(i) + '.txt','w')
             for VP in self.VPGroup[i]:
                 for path in self.VP2path:
                     wf.write(path + '\n')
             wf.close()
 
-    def infer_TS(self):
+    def infer_TS(self,dir):
         debug('[Struc.infer_TS]',stack_info=True)
         info('[Struc.infer_TS]run asrank for seperated group')
         for i in range(len(self.VPGroup)):
-            os.system("perl asrank.pl " + self.dir + "fullVPPath" + str(i) + ".txt > " 
-            + self.dir + "fullVPRel" + str(i) + ".txt")
+            os.system("perl asrank.pl " + dir + "fullVPPath" + str(i) + ".txt > " 
+            + dir + "fullVPRel" + str(i) + ".txt")
 
-    def vote_TS(self):
+    def vote_TS(self,dir):
         debug('[Struc.vote_TS]',stack_info=True)
         info('[Struc.vote_TS]')
         # vote 
-        self.topoFusion= TopoFusion(self.file_num,self.group_dir)
+        self.topoFusion= TopoFusion(self.file_num,dir)
         self.topoFusion.getTopoProb()
 
     # path_file, peeringdb file, AP vote out
@@ -524,16 +533,36 @@ class Infer():
     def __init__(self) -> None:
         pass
 
-if __name__=='__main__':
+debugging= True
 
-    
+if __name__=='__main__' and debugging:
+
+if __name__=='__main__' and not debugging:
+
     group_size=25
+    irr_file=''
     boost_file=''
+    path_file=''
+    path_dir=''
+
+    dir='data'
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    tswd = join(dir,ts_working_dir)
+    apwd = join(dir,ap_working_dir)
+
+    # TS simple infer 
 
     struc =Struc()
     struc.read_irr(irr_file)
     struc.get_relation(boost_file)
     struc.cal_hierarchy()
-    struc.set_VP_type()
-    struc.divide_TS(group_size)
-    struc.infer_TS()
+    names = os.listdir(path_dir)
+    for name in names:
+        if name.endswith('.v4'):
+            struc.set_VP_type(name)
+            struc.divide_TS(group_size,tswd)
+            struc.infer_TS(tswd)
+
+            struc.apollo(name,apwd) # AP simple infer
