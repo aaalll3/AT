@@ -3,15 +3,17 @@ import numpy as np
 import os
 
 class TopoFusion(object):
-    def __init__(self, fileNum, dir_name):
+    def __init__(self, fileNum, dir_name,date):
         self.fileNum = fileNum
         self.dir = dir_name
+        self.date = date
         self.prob = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))
         self.linknum = defaultdict(int)
 
     def getTopoProb(self):
         for i in range(self.fileNum):
-            _filename = self.dir + 'fullVPRel' + str(i) + '.txt'
+            _filename = f'{self.dir}rel_{self.date}_vp{i}.path'
+            # _filename = self.dir + 'fullVPRel' + str(i) + '.txt'
             with open(_filename) as f:
                 for line in f:
                     if line.startswith('#'):
@@ -32,7 +34,8 @@ class TopoFusion(object):
 
     def writeProb(self):
         alllink = set()
-        fout = open(self.dir + 'asrel_prime_prob.txt', 'w')
+        file_name = f'{self.dir}asrel_prime_prob_{self.date}.txt'
+        fout = open(file_name, 'w')
         for link in self.prob:
             if link in alllink:
                 continue
@@ -75,7 +78,8 @@ class TopoFusion(object):
 
     def writeResult(self, lowprob = 0.8, maxseen = 10, minseen = 4):
         alllink = set()
-        fout = open(self.dir + 'asrel_prime_prime.txt', 'w')
+        file_name = f'{self.dir}asrel_prime_prime_{self.date}.txt'
+        fout = open(file_name, 'w')
         for link in self.prob:
             if link in alllink:
                 continue

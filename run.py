@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 import resource
 import networkx as nx
@@ -55,6 +56,20 @@ class Run():
 # Second stage: vote in three way
 #     TS_S:infer_TS > vote_TS
 #     AP_S:vote_AP > infer_AP
+
+# source dir: RIB.test/path
+# source file: pc{date}.path.v4 or pc{date}.path.v6
+### pc stanfs for path & community
+
+# Apollo working dir: Result/AP_work
+# Apollo working file: rel_{date}.st1
+# Apollo working file for wrong path: rel_{date}.wrn
+
+# TocoScope working dir: Result/TS_work
+# TopoScope boost file: boost_{date}.ar
+# TopoScope mid path: path_{date}_vp{idx}.path
+# TopoScope working file: rel_{date}_vp{idx}.ar
+# TopoScope 
 
 class Struc():
     def __init__(self,path_file=None,boost_file=None,irr_file=None) -> None:
@@ -178,7 +193,7 @@ class Struc():
             self.non_tier_1.append(ASes)
     
     # AP c2l out/w out
-    def write_AP(self, AP_stage1_file ):
+    def write_AP(self, AP_stage1_file,wp_file):
         debug('[Struc.write_AP]',stack_info=True)
         info('[Struc.write_AP]AP: iteration and output c2f result')
         for it in range(5):
@@ -241,7 +256,7 @@ class Struc():
         #TODO
         #dst
         print('saving')
-        wp_file = join(AP_stage1_file,'wrong')
+        # wp_file = join(AP_stage1_file,'wrong')
         f = open(AP_stage1_file,'w')
         f.write(str(result))
         f.close()
@@ -271,39 +286,43 @@ class Struc():
                 self.partialVP.add(VP)
         # self.write_AP(AP_stage1_file)  # part1 over for Apollo
 
-    def apollo(self,path_file,AP_stage1_file):
+    def apollo(self,path_file,AP_stage1_file,wp_file):
         debug('[Struc.apollo]',stack_info=True)
         info('[Struc.apollo]run c2f for AP')
         with open(path_file) as f:
             for line in f:
                 ASes = line.strip().split('|')
                 self.process_line_AP(ASes) # Apollo
-        self.write_AP(AP_stage1_file)  # part1 over for Apollo
+        self.write_AP(AP_stage1_file,wp_file)  # part1 over for Apollo
 
-    # irr_file
+    # irr_file checked
     def read_irr(self,irr_path):
         debug('[Struc.read_irr]',stack_info=True)
         info('[Struc.read_irr]read irr info')
         with open(irr_path,'r') as f:
             lines = f.readlines()
         for line in lines:
-            tmp = line.strip().split('|')
+            # tmp = line.strip().split('|')
+            tmp = re.split(r'[ ]+',line)
             if tmp[2] == '1':
                 self.irr_c2p.add((tmp[0],tmp[1]))
             if tmp[2] == '0':
                 self.irr_p2p.add((tmp[0],tmp[1]))
+            if tmp[2] == '-1':
+                self.irr_c2p.add((tmp[1],tmp[0]))
 
-    def boost(self,path_file):
+    # path_file ar_version
+    def boost(self,ar_version,path_file):
         debug('[Struc.boost]',stack_info=True)
         info('[Struc.boost]run initial asrank for TS')
         name = path_file.split('.')[0]
         dst = name+'.rel'
-        command= f'perl asrank.pl {path_file} > {dst}'
+        command= f'perl {ar_version} {path_file} > {dst}'
         os.system(command)
         return dst
 
     # TS divided file
-    def divide_TS(self,group_size,dir):
+    def divide_TS(self,group_size,dir,date):
         debug('[Struc.divide_TS]',stack_info=True)
         info(f'[Struc.divide_TS]divide VP into {group_size} groups for voting')
         group_cnt = 0
@@ -329,26 +348,30 @@ class Struc():
             self.VPGroup.append(pre_VP[-w_partial:] + partial_VP)
         else:
             self.VPGroup.append(pre_VP + sec_VP + partial_VP)
-
+        #FULL
         for i in range(len(self.VPGroup)):
-            wf = open(dir + 'fullVPPath' + str(i) + '.txt','w')
+            wf_name = join(dir,f'path_{date}_vp{i}.path')
+            wf = open(wf_name,'w')
             for VP in self.VPGroup[i]:
                 for path in self.VP2path:
                     wf.write(path + '\n')
             wf.close()
-
-    def infer_TS(self,dir):
+    
+    #FULL
+    def infer_TS(self,dir,ar_version,date):
         debug('[Struc.infer_TS]',stack_info=True)
         info('[Struc.infer_TS]run asrank for seperated group')
         for i in range(len(self.VPGroup)):
-            os.system("perl asrank.pl " + dir + "fullVPPath" + str(i) + ".txt > " 
-            + dir + "fullVPRel" + str(i) + ".txt")
+            src_name = abspath(join(dir,f'path_{date}_vp{i}.path'))
+            dst_name = abspath(join(dir,f'rel_{date}_vp{i}.ar'))
+            command = f"perl {ar_version} {src_name} > {dst_name}"
+            os.system(command)
 
-    def vote_TS(self,dir):
+    def vote_TS(self,dir,date):
         debug('[Struc.vote_TS]',stack_info=True)
         info('[Struc.vote_TS]')
-        # vote 
-        self.topoFusion= TopoFusion(self.file_num,dir)
+        # vote
+        self.topoFusion = TopoFusion(self.file_num,dir,date)
         self.topoFusion.getTopoProb()
 
     # path_file, peeringdb file, AP vote out
@@ -533,36 +556,46 @@ class Infer():
     def __init__(self) -> None:
         pass
 
-debugging= True
-
-if __name__=='__main__' and debugging:
+debugging= False
 
 if __name__=='__main__' and not debugging:
 
     group_size=25
-    irr_file=''
-    boost_file=''
-    path_file=''
-    path_dir=''
+    irr_file='/home/lwd/RIB.test/path.test/irr.txt'
+    boost_file='/home/lwd/RIB.test/path.test/boost.txt'
 
-    dir='data'
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
     ts_working_dir='TS_working'
     ap_working_dir='AP_working'
 
-    tswd = join(dir,ts_working_dir)
-    apwd = join(dir,ap_working_dir)
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+
 
     # TS simple infer 
+    
+
+    boost_file = join(tswd,boost_file)
+    path_dir = s_dir
 
     struc =Struc()
     struc.read_irr(irr_file)
     struc.get_relation(boost_file)
     struc.cal_hierarchy()
     names = os.listdir(path_dir)
-    for name in names:
+    for idx,name in enumerate(names):
         if name.endswith('.v4'):
+            res = re.match(r'^pc([0-9]+)',name)
+            date=f'unknown{idx}'
             struc.set_VP_type(name)
-            struc.divide_TS(group_size,tswd)
-            struc.infer_TS(tswd)
+            if res is not None:
+                date = res.group(1)
+            struc.divide_TS(group_size,tswd,date)
+            struc.infer_TS(tswd,date)
 
-            struc.apollo(name,apwd) # AP simple infer
+
+            ap_file= join(apwd,f'rel_{date}.st1')
+            wp_file= join(apwd,f'rel_{date}.wrn')
+            struc.apollo(name,ap_file,wp_file) # AP simple infer
