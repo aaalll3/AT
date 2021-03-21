@@ -5,10 +5,11 @@ import resource
 import networkx as nx
 import json
 import pandas as pd
+import time
 
 from random import shuffle
 from collections import defaultdict
-from os.path import abspath, join
+from os.path import abspath, join, exists
 from networkx.algorithms.centrality import group
 from TopoScope.topoFusion import TopoFusion
 from rib_to_read import url_form, download_rib, worker, unzip_rib
@@ -21,11 +22,12 @@ from logging import warn,debug,info
 
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
-log_location = abspath(join('.','log'))
+log_location = abspath(join('./log',f'log_{time.time()}'))
+# log_location =''
 logging.basicConfig(filename=log_location,level=logging.INFO)
 
 
-# TODO
+
 # To make dataset
 class Download():
     def __init__(self) -> None:
@@ -78,7 +80,7 @@ class Struc():
         self.clique = set(['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
             '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956'])
         self.tier_1 = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
-            '3257', '3320', '3356', '4436', '5511', '6453', '6461', '6762', '7018', '12956', '3549']
+            '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
         self.high = set()
         self.low = set()
         self.stub = set()
@@ -162,9 +164,32 @@ class Struc():
             return 3
         else:
             return -1
-    
+
+    # path file, AP_out
+    def set_VP_type(self,path_file):
+        debug('[Struc.set_VP_type]',stack_info=True)
+        info('[Struc.set_VP_type]set VP type for TS and run c2f for AP')
+        with open(path_file) as f:
+            for line in f:
+                ASes = line.strip().split('|')
+                for AS in ASes:
+                    self.VP2AS[ASes[0]].add(AS)
+                self.VP2path[ASes[0]].add(line.strip())
+                # self.process_line_AP(ASes) # Apollo
+        for VP in self.VP2AS.keys():
+            if len(self.VP2AS[VP]) > 65000*0.8:
+                self.fullVP.add(VP)
+                if VP in self.clique or VP in self.high:
+                    self.pre_VP.add(VP)
+                else:
+                    self.sec_VP.add(VP)
+            else:
+                self.partialVP.add(VP)
+        # self.write_AP(AP_stage1_file)  # part1 over for Apollo
+
+
     def process_line_AP(self,ASes):
-        info(f'[Struc.process_line_AP]AP: process AS path {ASes}')
+        # info(f'[Struc.process_line_AP]AP: process AS path {ASes}')
         for i in range(len(ASes)-1):
             if(ASes[i],ASes[i+1]) in self.irr_c2p:
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
@@ -191,6 +216,8 @@ class Struc():
                 self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
         if idx == -1:
             self.non_tier_1.append(ASes)
+
+    
     
     # AP c2l out/w out
     def write_AP(self, AP_stage1_file,wp_file):
@@ -264,27 +291,7 @@ class Struc():
         f.write(str(self.wrong_path))
         f.close()
 
-    # path file, AP_out
-    def set_VP_type(self,path_file):
-        debug('[Struc.set_VP_type]',stack_info=True)
-        info('[Struc.set_VP_type]set VP type for TS and run c2f for AP')
-        with open(path_file) as f:
-            for line in f:
-                ASes = line.strip().split('|')
-                for AS in ASes:
-                    self.VP2AS[ASes[0]].add(AS)
-                self.VP2path[ASes[0]].add(line.strip())
-                # self.process_line_AP(ASes) # Apollo
-        for VP in self.VP2AS.keys():
-            if len(self.VP2AS[VP]) > 65000*0.8:
-                self.fullVP.add(VP)
-                if VP in self.clique or VP in self.high:
-                    self.pre_VP.add(VP)
-                else:
-                    self.sec_VP.add(VP)
-            else:
-                self.partialVP.add(VP)
-        # self.write_AP(AP_stage1_file)  # part1 over for Apollo
+
 
     def apollo(self,path_file,AP_stage1_file,wp_file):
         debug('[Struc.apollo]',stack_info=True)
@@ -303,7 +310,7 @@ class Struc():
             lines = f.readlines()
         for line in lines:
             # tmp = line.strip().split('|')
-            tmp = re.split(r'[ ]+',line)
+            tmp = re.split(r'[\s]+',line)
             if tmp[2] == '1':
                 self.irr_c2p.add((tmp[0],tmp[1]))
             if tmp[2] == '0':
@@ -336,9 +343,9 @@ class Struc():
         sec_order = [i for i in range(sec_num)]
         shuffle(pre_order)
         shuffle(sec_order)
-        for i in range(pre_num/group_size):
+        for i in range(int(pre_num/group_size)):
             self.VPGroup.append(pre_VP[i:i+25])
-        for i in range(sec_num/group_size):
+        for i in range(int(sec_num/group_size)):
             self.VPGroup.append(sec_VP[i:i+25])
         pre_rest = pre_num%group_size
         sec_rest = sec_num&group_size
@@ -353,7 +360,7 @@ class Struc():
             wf_name = join(dir,f'path_{date}_vp{i}.path')
             wf = open(wf_name,'w')
             for VP in self.VPGroup[i]:
-                for path in self.VP2path:
+                for path in self.VP2path[VP]:
                     wf.write(path + '\n')
             wf.close()
     
@@ -366,13 +373,6 @@ class Struc():
             dst_name = abspath(join(dir,f'rel_{date}_vp{i}.ar'))
             command = f"perl {ar_version} {src_name} > {dst_name}"
             os.system(command)
-
-    def vote_TS(self,dir,date):
-        debug('[Struc.vote_TS]',stack_info=True)
-        info('[Struc.vote_TS]')
-        # vote
-        self.topoFusion = TopoFusion(self.file_num,dir,date)
-        self.topoFusion.getTopoProb()
 
     # path_file, peeringdb file, AP vote out
     def infer_AP(self,path_file,peeringdb_file,AP_stage1_file):
@@ -394,7 +394,7 @@ class Struc():
                 for i in range(len(ASes),0,-1):
                     if (ASes[i], ASes[i-1]) not in links:
                         links.add((ASes[i], ASes[i-1]))
-        tier1s = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '4436', '5511', '6453', '6461', '6762', '7018', '12956', '3549']
+        tier1s = [ '174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
         g = nx.Graph()
         for link in links:
             g.add_edge(link[0], link[1])
@@ -547,22 +547,81 @@ class Struc():
                                                   'degree2','distance2','up-distance2','down-distance2','same-distance2','vp_cnt',
                                                  'colocated_ixp','colocated_facility','label'])
         link_fea.to_csv('fea.csv',index=False)
+    
+    def vote_TS(self,dir,date):
+        debug('[Struc.vote_TS]',stack_info=True)
+        info('[Struc.vote_TS]')
+        # vote
+        self.topoFusion = TopoFusion(self.file_num,dir,date)
+        file_list=[]
+        self.topoFusion.vote_among()
 
     def vote_ap(self):
         # vote from all files
-        pass
+        links=dict()
+        for file in file_list:
+            with open(file,'r') as ff:
+                for line in ff:
+                    if line.startswith('#'):
+                        continue
+                    line=line.strip().split('|')
+                    asn1=line[0]
+                    asn2=line[1]
+                    rel = line[2]
+                    links.setdefault((asn[i],asn[i+1]),set()).add(rel)
+        result=dict()
+        for link,rel in links.items():
+            if len(v)>1 and 0 in v:
+                result[k] = 0
+            elif len(v) == 1:
+                result[k] = list(v)[0]
+            else:
+                conflict +=1
+
+        w = open(filename,'w')
+        for link,rel in result.items():
+            w.write(f'{link[0]}|{link[1]}|{rel}\n')
+
+    @staticmethod
+    def AP_to_read(read_from,wrtie_to):
+        w = open(wrtie_to,'w')
+        with open(read_from,'r') as f:
+            res = eval(f.read())
+            for link,rel in res.items():
+                w.write(f'{link[0]}|{link[1]}|{rel}\n')
+            
 
 class Infer():
     def __init__(self) -> None:
         pass
 
-debugging= False
+test = True
 
-if __name__=='__main__' and not debugging:
+if __name__=='__main__' and test:
+    read_dir='/home/lwd/Result/AP_working/'
+    # read='/home/lwd/Result/AP_working/rel_20201222.st1'
+    names = os.listdir(read_dir)
+    for name in names:
+        if name.endswith('.st1'):
+            newname = name.replace('st1','apr')
+            read = join(read_dir,name)
+            write= join(read_dir,newname)
+            print(read)
+            print(write)
+            print(f'working on {read}')
+            Struc.AP_to_read(read,write)
+
+
+    quit()
+
+if __name__=='__main__':
+    print('start')
 
     group_size=25
-    irr_file='/home/lwd/RIB.test/path.test/irr.txt'
-    boost_file='/home/lwd/RIB.test/path.test/boost.txt'
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
 
     s_dir='/home/lwd/RIB.test/path.test'
     r_dir='/home/lwd/Result'
@@ -570,32 +629,67 @@ if __name__=='__main__' and not debugging:
     ts_working_dir='TS_working'
     ap_working_dir='AP_working'
 
+    auxd = join(r_dir,'auxiliary')
     tswd = join(r_dir,ts_working_dir)
     apwd = join(r_dir,ap_working_dir)
 
-
-    # TS simple infer 
     
 
-    boost_file = join(tswd,boost_file)
-    path_dir = s_dir
 
-    struc =Struc()
-    struc.read_irr(irr_file)
-    struc.get_relation(boost_file)
-    struc.cal_hierarchy()
+
+    # TS simple infer 
+    ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
+
+    # boost_file = join(tswd,boost_file)
+    path_dir = s_dir
+    def checke(path):
+        if exists(path):
+            print(f'ready:{path}')
+        else:
+            print(f'not exists:{path}')
+
     names = os.listdir(path_dir)
+    #TODO
+    # names=[ 'pc20201208.v4.u.path.clean']
+    names.sort()
     for idx,name in enumerate(names):
-        if name.endswith('.v4'):
-            res = re.match(r'^pc([0-9]+)',name)
+        if name.endswith('.clean'):
+            if 'v6' in name:
+                continue
             date=f'unknown{idx}'
-            struc.set_VP_type(name)
+            res = re.match(r'^pc([0-9]+)',name)
             if res is not None:
                 date = res.group(1)
-            struc.divide_TS(group_size,tswd,date)
-            struc.infer_TS(tswd,date)
+            boost_file=join(auxd,f'pc{date}.v4.arout')
 
+            path_file = join(s_dir,name)
+
+            checke(irr_file)
+            checke(boost_file)
+            checke(path_dir)
+            checke(path_file)
+            checke(ar_version)
+            checke(auxd)
+            checke(tswd)
+            checke(apwd)
+            
+            print(f'date:{date}')
+            # while True:
+            #     a = input('continue?')
+            #     if a == 'y':
+            #         break
+            #     elif a =='n':
+            #         quit()
+            
+            struc = Struc()
+            struc.read_irr(irr_file)
+            #TODO
+            struc.get_relation(boost_file)
+            struc.cal_hierarchy()
+            struc.set_VP_type(path_file)
+            struc.divide_TS(group_size,tswd,date)
+            struc.infer_TS(tswd,ar_version,date)
 
             ap_file= join(apwd,f'rel_{date}.st1')
             wp_file= join(apwd,f'rel_{date}.wrn')
-            struc.apollo(name,ap_file,wp_file) # AP simple infer
+            struc.apollo(path_file,ap_file,wp_file) # AP simple infer

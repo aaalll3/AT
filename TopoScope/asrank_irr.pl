@@ -1005,6 +1005,8 @@ if($opt eq "table-transit-raw")
 # members of the clique are disjoint are discarded.
 #
 # set ASN as clique as giving clique string
+
+$clique_string = "174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956";
 if(defined($clique_string))
 {
     $clique{$_} = 1 foreach(split(/\s+/, $clique_string));
@@ -1073,19 +1075,22 @@ if($opt eq "rels")
     }
 
 	# setting irr info
-	open(IRR,"<irr.txt",) or die "could not open irr.txt";
+	open(IRR,"</home/lwd/Result/auxiliary/irr.txt",) or die "could not open irr.txt";
 	while(<IRR>){
 		if(/^#/){
 			next;
 		}
-		my @link = split(/\s+/,$_);
-		my $rel = $link[2]
+		my @link = split(/\s+/, $_);
+		my $rel = $link[2];
+		if(defined($r{$link[0]}{$link[1]})){
+			next;
+    	}
 		# a>b r
 		if($rel == 0){ #p2p
 			r($link[0],$link[1],0);
-		}elsif($r == 1){ #c2p
+		}elsif($rel == 1){ #c2p
 			r($link[1],$link[0],-1);
-		}elsif($r == -1){ #p2c
+		}elsif($rel == -1){ #p2c
 			r($link[0],$link[1],-1);
 		}
 	}

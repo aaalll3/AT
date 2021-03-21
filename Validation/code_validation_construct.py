@@ -6,6 +6,11 @@ import sqlite3
 import requests
 from bs4 import BeautifulSoup
 
+sys.path.append('..')
+sys.path.append('.')
+
+from location import *
+
 class validation_construct:
     def __init__(self, args):
 
@@ -51,10 +56,10 @@ class validation_construct:
                 file_handle = open(full_name, 'r')
                 for line in file_handle:
                     line = line.strip()
-                    temp = line.split('&')
-                    if len(temp) > 2 and len(temp[1]) > 0 and len(temp[2]) > 0:
-                        final_path = temp[1].split('|')
-                        communities = temp[2].split()
+                    temp = line.split('**')
+                    if len(temp) == 2 and len(temp[0]) > 0 and len(temp[1]) > 0:
+                        final_path = temp[0].split('|')
+                        communities = temp[1].split()
                                 
                         cr_dict = defaultdict(set)
                         for community in communities:
@@ -175,16 +180,26 @@ def extract_asn_org(file_name):
     return asn_org
 
 if __name__ == "__main__":
+    # set path
+    comm_file=os.path.join(auxiliary,'relationship_communities.txt')
+    asorg_file=os.path.join(auxiliary,'20201001.as-org2info.txt')
+    input_dir=raw_path_dir
+    output_dir=os.path.abspath('/home/lwd/RIB.test/validation')
     
+    checke(comm_file)
+    checke(asorg_file)
+    checke(input_dir)
+    checke(output_dir)
+    # quit()
+    # working
+    community_dict = get_community_dict(comm_file)
+    routeserver_set = get_routeservers()
+    mapping = extract_asn_org(asorg_file)
+    worker([input_dir,output_dir,community_dict,routeserver_set,mapping])
+
+    quit()
     input_root = os.path.abspath('..') + os.sep + 'prefix_path_community'
     output_root = 'validation_data'
-
-    community_dict = get_community_dict('communities.txt')
-    routeserver_set = get_routeservers()
-    mapping = extract_asn_org('20201001.as-org2info.txt')
-    
-
-    
 
     begin_year = 2020
     end_year = 2020

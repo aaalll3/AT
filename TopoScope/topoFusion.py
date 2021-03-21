@@ -3,16 +3,37 @@ import numpy as np
 import os
 
 class TopoFusion(object):
-    def __init__(self, fileNum, dir_name,date):
+    def __init__(self, fileNum, dir_name,file_pattern,date):
         self.fileNum = fileNum
         self.dir = dir_name
+        self.file_pattern=file_pattern
         self.date = date
         self.prob = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))
         self.linknum = defaultdict(int)
 
+    def vote_among(self,file_list):
+        for file in file_list:
+            with open(file) as f:
+                for line in f:
+                    if line.startswith('#'):
+                        continue
+                    [asn1, asn2, rel] = line.strip().split('|')
+                    asn1, asn2 = int(asn1), int(asn2)
+                    if rel == '0' or rel == '1':
+                        self.prob[(asn1, asn2)] += np.array([1.0, 0.0, 0.0])
+                        self.prob[(asn2, asn1)] += np.array([1.0, 0.0, 0.0])
+                    elif rel == '-1':
+                        self.prob[(asn1, asn2)] += np.array([0.0, 1.0, 0.0])
+                        self.prob[(asn2, asn1)] += np.array([0.0, 0.0, 1.0])
+                    
+                    self.linknum[(asn1, asn2)] += 1
+                    self.linknum[(asn2, asn1)] += 1
+        self.writeProb()
+        self.writeResult(0.8, self.fileNum * 0.8, self.fileNum * 0.2)
+
     def getTopoProb(self):
         for i in range(self.fileNum):
-            _filename = f'{self.dir}rel_{self.date}_vp{i}.path'
+            _filename = os.path.join(self.dir, f'rel_{self.date}_vp{i}.path')
             # _filename = self.dir + 'fullVPRel' + str(i) + '.txt'
             with open(_filename) as f:
                 for line in f:
@@ -34,7 +55,8 @@ class TopoFusion(object):
 
     def writeProb(self):
         alllink = set()
-        file_name = f'{self.dir}asrel_prime_prob_{self.date}.txt'
+        file_name = os.path.join(self.dir,f'asrel_prime_prob_{self.date}.txt')
+        # file_name = f'{self.dir}asrel_prime_prob_{self.date}.txt'
         fout = open(file_name, 'w')
         for link in self.prob:
             if link in alllink:
@@ -78,7 +100,7 @@ class TopoFusion(object):
 
     def writeResult(self, lowprob = 0.8, maxseen = 10, minseen = 4):
         alllink = set()
-        file_name = f'{self.dir}asrel_prime_prime_{self.date}.txt'
+        file_name = os.path.join(self.dir,f'asrel_prime_prime_{self.date}.txt')
         fout = open(file_name, 'w')
         for link in self.prob:
             if link in alllink:

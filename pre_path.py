@@ -127,6 +127,19 @@ class Extor:
                     as_set = set(aspath)
                     if len(as_set) == 1 or not len(aspath) == len(as_set):
                         continue
+                    
+                    
+                    for asn in aspath:
+                        if asn in self.ixp:
+                            aspath.remove(asn)
+
+                    skip=False
+                    for asn in aspath:
+                        if not self.ASNAllocated(int(asn)):
+                            skip=True
+                            break
+                    if skip:
+                        continue
 
                     # input(f'C2 prefix: {prefix} aspath: {aspath} community: {community}')
 
@@ -231,8 +244,10 @@ if __name__ == '__main__':
 
 
 
-    debug_target = os.path.abspath('../RIB.test/')
+    debug_target = os.path.abspath('../RIB.test/path/test')
                                                         #DATE
-    debug_saving = os.path.abspath('../RIB.test/path/pc20201201')
+    debug_saving = os.path.abspath('../RIB.test/path/pc20201201_f')
     ex = Extor(debug_target,debug_saving)
     ex.work()
+    # target = ex.target_dir
+    # ex.checkdir(target,ex.extract,ex.select)
