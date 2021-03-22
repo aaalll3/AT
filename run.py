@@ -14,6 +14,7 @@ from networkx.algorithms.centrality import group
 from TopoScope.topoFusion import TopoFusion
 from rib_to_read import url_form, download_rib, worker, unzip_rib
 from logging import warn,debug,info
+from location import *
 
 # TODO
 # logging|done
@@ -374,6 +375,7 @@ class Struc():
             command = f"perl {ar_version} {src_name} > {dst_name}"
             os.system(command)
 
+
     # path_file, peeringdb file, AP vote out
     def infer_AP(self,path_file,peeringdb_file,AP_stage1_file):
         debug('[Struc.infer_AP]',stack_info=True)
@@ -552,11 +554,24 @@ class Struc():
         debug('[Struc.vote_TS]',stack_info=True)
         info('[Struc.vote_TS]')
         # vote
-        self.topoFusion = TopoFusion(self.file_num,dir,date)
-        file_list=[]
-        self.topoFusion.vote_among()
+        if self.file_num == None:
+            self.topoFusion = TopoFusion(self.file_num,dir,date)
+        else:
+            file_num=0
+            names = os.listdir(tswd)
+            for name in names:
+                if 'path_' in name:
+                    file_num+=1
+            self.topoFusion = TopoFusion(file_num,dir,date)
+        self.topoFusion.getTopoProb()
 
-    def vote_ap(self):
+    def vote_simple_ts(self,dir,date,file_list,output_file):
+        debug('[Struc.vote_TS]',stack_info=True)
+        info('[Struc.vote_TS]')
+        self.topoFusion = TopoFusion(10,dir,date)
+        self.topoFusion.vote_among(file_list,output_file)
+
+    def vote_ap(self,file_list,filename):
         # vote from all files
         links=dict()
         for file in file_list:
@@ -568,15 +583,13 @@ class Struc():
                     asn1=line[0]
                     asn2=line[1]
                     rel = line[2]
-                    links.setdefault((asn[i],asn[i+1]),set()).add(rel)
+                    links.setdefault((asn1,asn2),set()).add(rel)
         result=dict()
         for link,rel in links.items():
-            if len(v)>1 and 0 in v:
-                result[k] = 0
-            elif len(v) == 1:
-                result[k] = list(v)[0]
-            else:
-                conflict +=1
+            if len(rel)>1 and 0 in rel:
+                result[link] = 0
+            elif len(rel) == 1:
+                result[link] = list(rel)[0]
 
         w = open(filename,'w')
         for link,rel in result.items():
@@ -589,13 +602,36 @@ class Struc():
             res = eval(f.read())
             for link,rel in res.items():
                 w.write(f'{link[0]}|{link[1]}|{rel}\n')
-            
+
+    @staticmethod
+    def cross_ts(dir,ar_version,files):
+        for file in files:
+            dst_name = 'cross_'+file +'.ar'
+            src_name = join(dir,file)
+            dst_name = join(dir,dst_name)
+            command = f"perl {ar_version} {src_name} > {dst_name}"
+            os.system(command)
+
+    def cross_ap(self,dir,files):
+        for file in files:
+            path_file = join(dir,file)
+            AP_stage1_file = join(dir,'cross_'+file +'.st1')
+            wp_file = join(dir,'cross_'+file +'.wrn')
+            self.apollo(path_file,AP_stage1_file,wp_file)
+            Struc.AP_to_read(AP_stage1_file,AP_stage1_file.replace('st1','apr'))
+
 
 class Infer():
     def __init__(self) -> None:
         pass
 
-test = True
+test = False
+
+vote = False
+
+cross = False
+
+simple = True
 
 if __name__=='__main__' and test:
     read_dir='/home/lwd/Result/AP_working/'
@@ -610,8 +646,178 @@ if __name__=='__main__' and test:
             print(write)
             print(f'working on {read}')
             Struc.AP_to_read(read,write)
+    quit()
+
+if __name__=='__main__' and vote:
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
+
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    auxd = join(r_dir,'auxiliary')
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+
+    votd = join(r_dir,'vote')
+
+    tsfiles = os.listdir(tswd)
+    apfiles = os.listdir(apwd)
+
+    _tsfiles=dict()
+    _apfiles=[]
+    for n in tsfiles:
+        if n.endswith('.ar'):
+            res = re.match(r'^rel_([0-9]+)',n)
+            today=None
+            if res is not None:
+                date = res.group(1)
+                name = join(tswd,n)
+                today = _tsfiles.setdefault(date,[]).append(name)
+            else:
+                continue
+
+    for n in apfiles:
+        if n.endswith('.apr'):
+            name = join(apwd,n)
+            _apfiles.append(name)
+
+    struc = Struc()
+    struc.read_irr(irr_file)
 
 
+    # tsvote 
+    struc.topoFusion = TopoFusion(4,dir,date)
+
+    file_list=['/home/lwd/Result/AP_working/rel_20201201.apr',
+    '/home/lwd/Result/AP_working/rel_20201208.apr',
+    '/home/lwd/Result/AP_working/rel_20201215.apr',
+    '/home/lwd/Result/AP_working/rel_20201222.apr']
+    output_file='/home/lwd/Result/vote/tsv/apf_month.rel'
+    struc.topoFusion.vote_among(file_list,output_file)
+
+    quit()
+
+    # ts file, ts vote
+    for date,files in _tsfiles.items():
+        print(date,files)
+        outf = join(votd,'tsv',f'tsf_{date}.rel')
+        struc.vote_simple_ts(tswd,date, files,outf)
+
+    # ap file, ap vote
+
+    # _apfiles = ['/home/lwd/Result/vote/tsv/tsf_20201201.rel',
+    # '/home/lwd/Result/vote/tsv/tsf_20201208.rel',
+    # '/home/lwd/Result/vote/tsv/tsf_20201215.rel',
+    # '/home/lwd/Result/vote/tsv/tsf_20201222.rel',]
+    # outf = join(votd,'apv','tsf_apf.rel')
+    # struc.vote_ap(_apfiles,outf)
+
+    quit()
+
+if __name__=='__main__' and cross:
+
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
+
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    auxd = join(r_dir,'auxiliary')
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+
+    votd = join(r_dir,'vote')
+
+    tsfiles = os.listdir(tswd)
+    apfiles = os.listdir(apwd)
+
+    _tsfiles=[]
+    _apfiles=[]
+    for n in tsfiles:
+        if n.endswith('.path'):
+            _tsfiles.append(n)
+
+    ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
+    struc = Struc()
+    struc.read_irr(irr_file)
+
+    struc.cross_ap(tswd,_tsfiles)
+
+    quit()
+
+if __name__=='__main__' and simple:
+    print('start')
+
+    group_size=25
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc202012.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
+
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    auxd = join(r_dir,'auxiliary')
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+
+    
+
+
+
+    # TS simple infer 
+    ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
+
+    boost_file = join(tswd,boost_file)
+    path_dir = s_dir
+    def checke(path):
+        if exists(path):
+            print(f'ready:{path}')
+        else:
+            print(f'not exists:{path}')
+
+    name = 'pc202012.v4.u.path.clean'
+    path_file = join(s_dir,name)
+
+    checke(irr_file)
+    checke(boost_file)
+    checke(path_dir)
+    checke(path_file)
+    checke(ar_version)
+    checke(auxd)
+    checke(tswd)
+    checke(apwd)
+    date='wholemonth'
+    # print(f'date:{date}')
+    while True:
+        a = input('continue?')
+        if a == 'y':
+            break
+        elif a =='n':
+            quit()
+    
+    struc = Struc()
+    struc.read_irr(irr_file)
+    #TODO
+    struc.get_relation(boost_file)
+    struc.cal_hierarchy()
+    struc.set_VP_type(path_file)
+    struc.divide_TS(group_size,tswd,date)
+    struc.infer_TS(tswd,ar_version,date)
     quit()
 
 if __name__=='__main__':
@@ -650,7 +856,7 @@ if __name__=='__main__':
 
     names = os.listdir(path_dir)
     #TODO
-    # names=[ 'pc20201208.v4.u.path.clean']
+    # names=[ 'pc20201201.v4.u.path.clean']
     names.sort()
     for idx,name in enumerate(names):
         if name.endswith('.clean'):
@@ -690,6 +896,6 @@ if __name__=='__main__':
             struc.divide_TS(group_size,tswd,date)
             struc.infer_TS(tswd,ar_version,date)
 
-            ap_file= join(apwd,f'rel_{date}.st1')
-            wp_file= join(apwd,f'rel_{date}.wrn')
-            struc.apollo(path_file,ap_file,wp_file) # AP simple infer
+            # ap_file= join(apwd,f'rel_{date}.st1')
+            # wp_file= join(apwd,f'rel_{date}.wrn')
+            # struc.apollo(path_file,ap_file,wp_file) # AP simple infer

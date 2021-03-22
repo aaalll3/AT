@@ -3,12 +3,7 @@ import re
 
 
 
+h = [1,2,3]
 
-
-ll = os.path.join('a','b')
- 
-print(ll)
-
-ll = os.path.abspath(ll)
-
-print(ll)
+[a,b,c ]=h
+print(a,b,c)
