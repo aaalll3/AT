@@ -627,11 +627,11 @@ class Infer():
 
 test = False
 
-vote = False
+vote = True
 
 cross = False
 
-simple = True
+simple = False
 
 if __name__=='__main__' and test:
     read_dir='/home/lwd/Result/AP_working/'
@@ -694,11 +694,11 @@ if __name__=='__main__' and vote:
     # tsvote 
     struc.topoFusion = TopoFusion(4,dir,date)
 
-    file_list=['/home/lwd/Result/AP_working/rel_20201201.apr',
-    '/home/lwd/Result/AP_working/rel_20201208.apr',
-    '/home/lwd/Result/AP_working/rel_20201215.apr',
-    '/home/lwd/Result/AP_working/rel_20201222.apr']
-    output_file='/home/lwd/Result/vote/tsv/apf_month.rel'
+    file_list=[f'/home/lwd/Result/TS_working/rel_wholemonth_vp{i}.ar' for i in range(0,14)]
+    # input(file_list)
+    output_file='/home/lwd/Result/vote/tsv/tsf_month.rel'
+    for file in file_list:
+        checke(file)
     struc.topoFusion.vote_among(file_list,output_file)
 
     quit()

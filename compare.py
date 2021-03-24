@@ -99,6 +99,7 @@ if __name__ == "__main__":
     '/home/lwd/Result/vote/tsv/tsf_20201208.rel',
     '/home/lwd/Result/vote/tsv/tsf_20201215.rel',
     '/home/lwd/Result/vote/tsv/tsf_20201222.rel',
+    '/home/lwd/Result/vote/tsv/tsf_month.rel',
     '/home/lwd/Result/vote/apv/apf.rel',
     '/home/lwd/Result/vote/apv/tsf.rel',
     '/home/lwd/Result/vote/apv/tsf_apf.rel',
