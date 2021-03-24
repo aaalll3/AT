@@ -315,7 +315,7 @@ class Struc():
         """
         link_rel_c2f = dict()
         for path_file in path_files:
-            pf = open(path_file)
+            pf = open(path_file,'r')
             for line in pf:
                 if line.startswith('#'):
                     continue
@@ -340,7 +340,7 @@ class Struc():
                     # if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
                     #     self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
             pf.close()
-        wf = open(output_file)
+        wf = open(output_file,'w')
         for link,rel in link_rel_c2f.items():
             if rel != 4:
                 line = f'{link[0]}|{link[1]}|{rel}\n'
@@ -354,7 +354,7 @@ class Struc():
         link_rel_ap = dict()
         non_t1 =list()
         for path_file in path_files:
-            pf = open(path_file)
+            pf = open(path_file,'r')
             for line in pf:
                 if line.startswith('#'):
                     continue
@@ -379,7 +379,7 @@ class Struc():
                     if prime_t1 == 10000:
                         non_t1.append(ASes)
                     # if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
-                    #     self.link_rel_ap\.setdefault((ASes[i],ASes[i+1]),0)
+                    #     link_rel_ap.setdefault((ASes[i],ASes[i+1]),0)
             pf.close()
         for turn in range(5):
             for ASes in non_t1:
@@ -409,8 +409,8 @@ class Struc():
                     if idx_0<=len(ASes)-2:
                         for i in range(idx_0+1,len(ASes)-1):
                             link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-        wf = open(output_file)
-        for link,rel in self.link_rel_ap.items():
+        wf = open(output_file,'w')
+        for link,rel in link_rel_ap.items():
             if rel != 4:
                 line = f'{link[0]}|{link[1]}|{rel}\n'
                 wf.write(line)
