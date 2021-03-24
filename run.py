@@ -350,8 +350,9 @@ class Struc():
     def apollo_it(self, path_files, output_file):
         """
         core to leaf followed by apollo iteration
-        """     
-        link_rel_c2f = dict()
+        """    
+        link_rel_ap = dict()
+        non_t1 =list()
         for path_file in path_files:
             pf = open(path_file)
             for line in pf:
@@ -361,27 +362,55 @@ class Struc():
                 prime_t1 = 10000
                 for i in range(len(ASes)-1):
                     if prime_t1 <= i-2:
-                        rel = link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
+                        rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
                         if rel != -1:
-                            link_rel_c2f[(ASes[i],ASes[i+1])] = 4
+                            link_rel_ap[(ASes[i],ASes[i+1])] = 4
                         continue
                     if(ASes[i],ASes[i+1]) in self.irr_c2p:
-                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),1)
+                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
                     if(ASes[i+1],ASes[i]) in self.irr_c2p:
-                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
+                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
                     if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
-                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
+                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),0)
                     if ASes[i] in self.tier_1:
                         if prime_t1 == i-1:
-                            link_rel_c2f.setdefault((ASes[i-1],ASes[i]),0)
+                            link_rel_ap.setdefault((ASes[i-1],ASes[i]),0)
                         prime_t1 = i
+                    if prime_t1 == 10000:
+                        non_t1.append(ASes)
                     # if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
-                    #     self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
+                    #     self.link_rel_ap\.setdefault((ASes[i],ASes[i+1]),0)
             pf.close()
         for turn in range(5):
-            
+            for ASes in non_t1:
+                idx_11 = 0
+                idx_1 = 0
+                idx_0 = 0
+                for i in range(len(ASes)-1):
+                    if (ASes[i],ASes[i+1]) in link_rel_ap.keys() \
+                        and link_rel_ap[(ASes[i],ASes[i+1])] == -1:
+                        idx_11 = i
+                    if (ASes[i],ASes[i+1]) in link_rel_ap.keys() \
+                        and link_rel_ap[(ASes[i],ASes[i+1])] == 0:
+                        idx_0 = i
+                    if (ASes[i],ASes[i+1]) in link_rel_ap.keys() \
+                        and link_rel_ap[(ASes[i],ASes[i+1])] == 1:
+                        idx_1 = i
+                if idx_11 !=0:
+                    for i in range(idx_1+1,len(ASes)-1):
+                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
+                if idx_1 !=0:
+                    for i in range(idx_0-1):
+                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                if idx_0 !=0:
+                    if idx_0>=2:
+                        for i in range(idx_0-1):
+                            link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                    if idx_0<=len(ASes)-2:
+                        for i in range(idx_0+1,len(ASes)-1):
+                            link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
         wf = open(output_file)
-        for link,rel in self.link_rel_c2f.items():
+        for link,rel in self.link_rel_ap.items():
             if rel != 4:
                 line = f'{link[0]}|{link[1]}|{rel}\n'
                 wf.write(line)
@@ -897,12 +926,59 @@ if __name__=='__main__' and simple:
     
     struc = Struc()
     struc.read_irr(irr_file)
+
+
+    tsls = os.listdir(tswd)
+    in_files=[]
+    out_files=[]
+    out_files_ap=[]
+    for name in tsls:
+        if name.endswith('path'):
+            res = re.match(r'^path_(*).path',n)
+            if res is not None:
+                tmp = res.group(1)
+                nn = join(tswd,name)
+                in_files.append([nn])
+                nn = join(tswd,f'rel_{tmp}.cf')
+                out_files.append(nn)
+                nn = join(tswd,f'rel_{tmp}.apr')
+                out_files_ap.append(nn)
+            else:
+                continue
+    # vg vb
+    for in_file,out_file in zip(in_files,out_files):
+        struc.core2leaf(in_file,out_file)
+        struc.apollo_it(in_file,out_file)
+
+    # vd
+    in_files=[
+        '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201208.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201215.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201222.v4.u.path.clean',
+    ]
+    out_files=[
+        '/home/lwd/Result/AP_working/rel_20201201.cf',
+        '/home/lwd/Result/AP_working/rel_20201208.cf',
+        '/home/lwd/Result/AP_working/rel_20201215.cf',
+        '/home/lwd/Result/AP_working/rel_20201222.cf',
+        ]
+    out_files_ap=[
+        '/home/lwd/Result/AP_working/rel_20201201.apr',
+        '/home/lwd/Result/AP_working/rel_20201208.apr',
+        '/home/lwd/Result/AP_working/rel_20201215.apr',
+        '/home/lwd/Result/AP_working/rel_20201222.apr',
+        ]
+    for in_file,out_file in zip(in_files,out_files):
+        struc.core2leaf([in_file],out_file)
+        struc.apollo_it(in_file,out_file)
+
     #TODO
-    struc.get_relation(boost_file)
-    struc.cal_hierarchy()
-    struc.set_VP_type(path_file)
-    struc.divide_TS(group_size,tswd,date)
-    struc.infer_TS(tswd,ar_version,date)
+    # struc.get_relation(boost_file)
+    # struc.cal_hierarchy()
+    # struc.set_VP_type(path_file)
+    # struc.divide_TS(group_size,tswd,date)
+    # struc.infer_TS(tswd,ar_version,date)
     quit()
 
 if __name__=='__main__':
