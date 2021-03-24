@@ -741,11 +741,11 @@ class Infer():
 
 test = False
 
-vote = True
+vote = False
 
 cross = False
 
-simple = False
+simple = True
 
 if __name__=='__main__' and test:
     read_dir='/home/lwd/Result/AP_working/'
@@ -945,6 +945,17 @@ if __name__=='__main__' and simple:
                 out_files_ap.append(nn)
             else:
                 continue
+    
+    for in_file,out_file in zip(in_files,out_files):
+        print(in_file)
+        print(out_file)
+    
+    while True:
+        a = input('continue?')
+        if a == 'y':
+            break
+        elif a =='n':
+            quit()
     # vg vb
     for in_file,out_file in zip(in_files,out_files):
         struc.core2leaf(in_file,out_file)
