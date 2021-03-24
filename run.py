@@ -302,29 +302,6 @@ class Struc():
         self.write_AP(AP_stage1_file,wp_file)  # part1 over for Apollo
 
 
-    def cc2f(self, line):
-        """
-        for simplify
-        """
-        ASes = line.split('|')
-        prime_t1 = 10000
-        for i in range(len(ASes)-1):
-            if prime_t1 <= i-2:
-                rel = self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
-                if rel != -1:
-                    self.link_rel_c2f[(ASes[i],ASes[i+1])] = 4
-                continue
-            if(ASes[i],ASes[i+1]) in self.irr_c2p:
-                self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),1)
-            if(ASes[i+1],ASes[i]) in self.irr_c2p:
-                self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
-            if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
-                self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
-            if ASes[i] in self.tier_1:
-                if prime_t1 == i-1:
-                    self.link_rel_c2f.setdefault((ASes[i-1],ASes[i]),0)
-                prime_t1 = i
-
     def core2leaf(self, path_files, output_file):
         """
         A easy core to leaf infer with irr
@@ -336,17 +313,35 @@ class Struc():
         0 for p2p
         4 for confilct link
         """
+        link_rel_c2f = dict()
         for path_file in path_files:
             pf = open(path_file)
             for line in pf:
                 if line.startswith('#'):
                     continue
-                self.cc2f(line)
+                ASes = line.split('|')
+                prime_t1 = 10000
+                for i in range(len(ASes)-1):
+                    if prime_t1 <= i-2:
+                        rel = link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
+                        if rel != -1:
+                            link_rel_c2f[(ASes[i],ASes[i+1])] = 4
+                        continue
+                    if(ASes[i],ASes[i+1]) in self.irr_c2p:
+                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),1)
+                    if(ASes[i+1],ASes[i]) in self.irr_c2p:
+                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
+                    if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
+                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
+                    if ASes[i] in self.tier_1:
+                        if prime_t1 == i-1:
+                            link_rel_c2f.setdefault((ASes[i-1],ASes[i]),0)
+                        prime_t1 = i
                     # if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
                     #     self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
             pf.close()
         wf = open(output_file)
-        for link,rel in self.link_rel_c2f.items():
+        for link,rel in link_rel_c2f.items():
             if rel != 4:
                 line = f'{link[0]}|{link[1]}|{rel}\n'
                 wf.write(line)
@@ -356,7 +351,41 @@ class Struc():
         """
         core to leaf followed by apollo iteration
         """     
-                    
+        link_rel_c2f = dict()
+        for path_file in path_files:
+            pf = open(path_file)
+            for line in pf:
+                if line.startswith('#'):
+                    continue
+                ASes = line.split('|')
+                prime_t1 = 10000
+                for i in range(len(ASes)-1):
+                    if prime_t1 <= i-2:
+                        rel = link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
+                        if rel != -1:
+                            link_rel_c2f[(ASes[i],ASes[i+1])] = 4
+                        continue
+                    if(ASes[i],ASes[i+1]) in self.irr_c2p:
+                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),1)
+                    if(ASes[i+1],ASes[i]) in self.irr_c2p:
+                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),-1)
+                    if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
+                        link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
+                    if ASes[i] in self.tier_1:
+                        if prime_t1 == i-1:
+                            link_rel_c2f.setdefault((ASes[i-1],ASes[i]),0)
+                        prime_t1 = i
+                    # if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
+                    #     self.link_rel_c2f.setdefault((ASes[i],ASes[i+1]),0)
+            pf.close()
+        for turn in range(5):
+            
+        wf = open(output_file)
+        for link,rel in self.link_rel_c2f.items():
+            if rel != 4:
+                line = f'{link[0]}|{link[1]}|{rel}\n'
+                wf.write(line)
+        wf.close()
 
 
     # irr_file checked
