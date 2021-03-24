@@ -934,7 +934,7 @@ if __name__=='__main__' and simple:
     out_files_ap=[]
     for name in tsls:
         if name.endswith('path'):
-            res = re.match(r'^path_(*).path',n)
+            res = re.match(r'^path_(.+)\.path',name)
             if res is not None:
                 tmp = res.group(1)
                 nn = join(tswd,name)
