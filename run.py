@@ -319,7 +319,7 @@ class Struc():
             for line in pf:
                 if line.startswith('#'):
                     continue
-                ASes = line.split('|')
+                ASes = line.strip().split('|')
                 prime_t1 = 10000
                 for i in range(len(ASes)-1):
                     if prime_t1 <= i-2:
@@ -358,7 +358,7 @@ class Struc():
             for line in pf:
                 if line.startswith('#'):
                     continue
-                ASes = line.split('|')
+                ASes = line.strip().split('|')
                 prime_t1 = 10000
                 for i in range(len(ASes)-1):
                     if prime_t1 <= i-2:
@@ -398,17 +398,25 @@ class Struc():
                         idx_1 = i
                 if idx_11 !=0:
                     for i in range(idx_1+1,len(ASes)-1):
-                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
+                        rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
+                        if rel != -1:
+                            link_rel_ap[(ASes[i],ASes[i+1])]=4
                 if idx_1 !=0:
                     for i in range(idx_0-1):
-                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                        rel=link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                        if rel != 1:
+                            link_rel_ap[(ASes[i],ASes[i+1])]=4
                 if idx_0 !=0:
                     if idx_0>=2:
                         for i in range(idx_0-1):
-                            link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                            rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                            if rel != 1:
+                                link_rel_ap[(ASes[i],ASes[i+1])]=4
                     if idx_0<=len(ASes)-2:
                         for i in range(idx_0+1,len(ASes)-1):
                             link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
+                            if rel != -1:
+                                link_rel_ap[(ASes[i],ASes[i+1])]=4
         wf = open(output_file,'w')
         for link,rel in link_rel_ap.items():
             if rel != 4:
@@ -416,6 +424,26 @@ class Struc():
                 wf.write(line)
         wf.close()
 
+    def clear(self,path,out):
+        f = open(path,'r')
+        links = []
+        link = None
+        for line in f:
+            line = line.strip()
+            parts = line.split('|')
+            if len(parts)<3:
+                if link is None:
+                    link = [parts[0],parts[1]]
+                else:
+                    link.append(parts[1])
+                    links.append(link)
+                    link = None
+            else:
+                links.append(parts)
+        f.close()
+        o = open(out,'w')
+        for link in links:
+            o.write('|'.join(link)+'\n')
 
     # irr_file checked
     def read_irr(self,irr_path):
@@ -739,13 +767,34 @@ class Infer():
     def __init__(self) -> None:
         pass
 
+clear = False
+
 test = False
 
-vote = False
+vote = True
 
 cross = False
 
-simple = True
+simple = False
+
+
+
+if __name__=='__main__' and clear:
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    struc = Struc()
+    struc.read_irr(irr_file)
+    # struc.core2leaf(['/home/lwd/Result/TS_working/path_20201208_vp1.path'],'/home/lwd/Result/TS_working/rel_20201208_vp1.cf')
+    tsnames = os.listdir('/home/lwd/Result/TS_working')
+    apnames = os.listdir('/home/lwd/Result/AP_working')
+    for name in tsnames:
+        if name.endswith('.cf') or name.endswith('.apr'):
+            name = join(tswd,name)
+            struc.clear(name,name)
+    for name in apnames:
+        if name.endswith('.cf') or name.endswith('.apr'):
+            name = join(apwd,name)
+            struc.clear(name,name)
+    quit()
 
 if __name__=='__main__' and test:
     read_dir='/home/lwd/Result/AP_working/'
@@ -785,8 +834,18 @@ if __name__=='__main__' and vote:
 
     _tsfiles=dict()
     _apfiles=[]
+    # for n in tsfiles:
+    #     if n.endswith('.ar'):
+    #         res = re.match(r'^rel_([0-9]+)',n)
+    #         today=None
+    #         if res is not None:
+    #             date = res.group(1)
+    #             name = join(tswd,n)
+    #             today = _tsfiles.setdefault(date,[]).append(name)
+    #         else:
+    #             continue
     for n in tsfiles:
-        if n.endswith('.ar'):
+        if n.endswith('.apr2'):
             res = re.match(r'^rel_([0-9]+)',n)
             today=None
             if res is not None:
@@ -805,15 +864,51 @@ if __name__=='__main__' and vote:
     struc.read_irr(irr_file)
 
 
-    # tsvote 
-    struc.topoFusion = TopoFusion(4,dir,date)
+    # quit()
 
-    file_list=[f'/home/lwd/Result/TS_working/rel_wholemonth_vp{i}.ar' for i in range(0,14)]
+
+    for date,files in _tsfiles.items():
+        print(date,files)
+        outf = join(votd,'tsv',f'ap2_bv_{date}.rel')
+        struc.vote_simple_ts(tswd,date, files,outf)
+
+    _apfiles = ['/home/lwd/Result/vote/tsv/ap2_bv_20201201.rel',
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201208.rel',
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201215.rel',
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201222.rel',]
+    outf = join(votd,'apv','ap2_bv.rel')
+    struc.vote_ap(_apfiles,outf)    
+
+    # tsvote 
+
+    # file_list=[f'/home/lwd/Result/TS_working/rel_wholemonth_vp{i}.ar' for i in range(0,14)]
+    # # input(file_list)
+    # output_file='/home/lwd/Result/vote/tsv/ar_tsv_month.rel'
+    # struc_ar_tsv = Struc()
+    # struc_ar_tsv.read_irr(irr_file)
+    # struc_ar_tsv.topoFusion = TopoFusion(14,dir,date)
+    # for file in file_list:
+    #     checke(file)
+    # struc_ar_tsv.topoFusion.vote_among(file_list,output_file)
+    # struc_ar_tsv=None
+
+    file_list=[f'/home/lwd/Result/TS_working/rel_wholemonth_vp{i}.apr2' for i in range(0,14)]
     # input(file_list)
-    output_file='/home/lwd/Result/vote/tsv/tsf_month.rel'
+    output_file='/home/lwd/Result/vote/tsv/ap2_tsv_month.rel'
+    struc_ap_tsv = Struc()
+    struc_ap_tsv.read_irr(irr_file)
+    struc_ap_tsv.topoFusion = TopoFusion(14,dir,date)
     for file in file_list:
         checke(file)
-    struc.topoFusion.vote_among(file_list,output_file)
+    struc_ap_tsv.topoFusion.vote_among(file_list,output_file)
+    struc_ap_tsv=None
+
+    _apfiles = ['/home/lwd/Result/AP_working/rel_20201201.apr2',
+    '/home/lwd/Result/AP_working/rel_20201208.apr2',
+    '/home/lwd/Result/AP_working/rel_20201215.apr2',
+    '/home/lwd/Result/AP_working/rel_20201222.apr2',]
+    outf = join(votd,'apv','ap2_apv.rel')
+    struc.vote_ap(_apfiles,outf)    
 
     quit()
 
@@ -825,12 +920,6 @@ if __name__=='__main__' and vote:
 
     # ap file, ap vote
 
-    # _apfiles = ['/home/lwd/Result/vote/tsv/tsf_20201201.rel',
-    # '/home/lwd/Result/vote/tsv/tsf_20201208.rel',
-    # '/home/lwd/Result/vote/tsv/tsf_20201215.rel',
-    # '/home/lwd/Result/vote/tsv/tsf_20201222.rel',]
-    # outf = join(votd,'apv','tsf_apf.rel')
-    # struc.vote_ap(_apfiles,outf)
 
     quit()
 
@@ -932,6 +1021,7 @@ if __name__=='__main__' and simple:
     in_files=[]
     out_files=[]
     out_files_ap=[]
+    first  = False
     for name in tsls:
         if name.endswith('path'):
             res = re.match(r'^path_(.+)\.path',name)
@@ -941,26 +1031,38 @@ if __name__=='__main__' and simple:
                 in_files.append([nn])
                 nn = join(tswd,f'rel_{tmp}.cf')
                 out_files.append(nn)
-                nn = join(tswd,f'rel_{tmp}.apr')
+                nn = join(tswd,f'rel_{tmp}.apr2')
                 out_files_ap.append(nn)
             else:
                 continue
     
-    for in_file,out_file in zip(in_files,out_files):
+    # for in_file,out_file in zip(in_files,out_files):
+    #     print(in_file)
+    #     print(out_file)
+    
+    # while True:
+    #     a = input('continue?')
+    #     if a == 'y':
+    #         break
+    #     elif a =='n':
+    #         quit()
+    # vg vb
+    for in_file,out_file,out_file_ap in zip(in_files,out_files,out_files_ap):
         print(in_file)
         print(out_file)
-    
-    while True:
-        a = input('continue?')
-        if a == 'y':
-            break
-        elif a =='n':
-            quit()
-    # vg vb
-    for in_file,out_file in zip(in_files,out_files):
-        struc.core2leaf(in_file,out_file)
-        struc.apollo_it(in_file,out_file)
+        print(out_file_ap)
+        if first:
+            start = time.time()
+            struc.core2leaf(in_file,out_file)
+            p1 = time.time()
+            struc.apollo_it(in_file,out_file_ap)
+            p2 = time.time()
+            print(f'c2f:{p1-start}s\napollo:{p2-p1}s')
+            first = False
+        else:
+            struc.apollo_it(in_file,out_file_ap)
 
+            # pass
     # vd
     in_files=[
         '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean',
@@ -975,15 +1077,25 @@ if __name__=='__main__' and simple:
         '/home/lwd/Result/AP_working/rel_20201222.cf',
         ]
     out_files_ap=[
-        '/home/lwd/Result/AP_working/rel_20201201.apr',
-        '/home/lwd/Result/AP_working/rel_20201208.apr',
-        '/home/lwd/Result/AP_working/rel_20201215.apr',
-        '/home/lwd/Result/AP_working/rel_20201222.apr',
+        '/home/lwd/Result/AP_working/rel_20201201.apr2',
+        '/home/lwd/Result/AP_working/rel_20201208.apr2',
+        '/home/lwd/Result/AP_working/rel_20201215.apr2',
+        '/home/lwd/Result/AP_working/rel_20201222.apr2',
         ]
-    for in_file,out_file in zip(in_files,out_files):
-        struc.core2leaf([in_file],out_file)
-        struc.apollo_it(in_file,out_file)
-
+    for in_file,out_file,out_file_ap in zip(in_files,out_files,out_files_ap):
+        print(in_file)
+        print(out_file)
+        print(out_file_ap)
+        if first:
+            start = time.time()
+            struc.core2leaf([in_file],out_file)
+            p1 = time.time()
+            struc.apollo_it(in_file,out_file_ap)
+            p2 = time.time()
+            print(f'c2f:{p1-start}s\napollo:{p2-p1}s')
+            first = False
+        else:
+            struc.apollo_it([in_file],out_file_ap)
     #TODO
     # struc.get_relation(boost_file)
     # struc.cal_hierarchy()

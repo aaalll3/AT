@@ -89,7 +89,7 @@ class comm():
                     if int(rr)==int(rel):
                         self.hit +=1
             self.ti+=1
-        print(f'result: \033[31mhit {self.hit}\033[0m \033[35mtotal {self.ti}\033[0m \033[36mcover {self.cover}\033[0m\n\033[31mprecesion {self.hit/self.ti}\033[0m \033[35mrecall {self.hit/self.tv}\033[0m \033[36mcover rate {self.cover/self.tv}\033[0m')
+        print(f'result: \033[31mhit {self.hit}\033[0m \033[35mtotal {self.ti}\033[0m \033[36mcover {self.cover}\033[0m \033[32mhit/infer/valid {self.hit}/{self.ti}/{self.tv}\033[0m\n\033[31mprecesion {self.hit/self.ti}\033[0m \033[35mrecall {self.hit/self.tv}\033[0m \033[36mcover rate {self.cover/self.tv}\033[0m')
         rf.close()
         self.reset()
 
@@ -99,15 +99,30 @@ if __name__ == "__main__":
     '/home/lwd/Result/vote/tsv/tsf_20201208.rel',
     '/home/lwd/Result/vote/tsv/tsf_20201215.rel',
     '/home/lwd/Result/vote/tsv/tsf_20201222.rel',
-    '/home/lwd/Result/vote/tsv/tsf_month.rel',
     '/home/lwd/Result/vote/apv/apf.rel',
+    '/home/lwd/Result/vote/apv/ap_apv.rel',
+    '/home/lwd/Result/vote/apv/ap2_apv.rel',
+    '/home/lwd/Result/vote/apv/cf_apv.rel',
     '/home/lwd/Result/vote/apv/tsf.rel',
+
+    '/home/lwd/Result/vote/apv/ap_bv.rel',
+    '/home/lwd/Result/vote/apv/ap2_bv.rel',
+    '/home/lwd/Result/vote/apv/cf_bv.rel',
     '/home/lwd/Result/vote/apv/tsf_apf.rel',
-    '/home/lwd/code/Apollo.code/stage_1_res.txt',
+
+    '/home/lwd/Result/vote/tsv/ap_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/cf_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/tsf_month.rel',
+
     '/home/lwd/Result/auxiliary/pc20201201.v4.arout',
     '/home/lwd/Result/TS_working/rel_20201222_vp1.ar',
     '/home/lwd/Result/AP_working/rel_20201201.apr',
-    '/home/lwd/Result/auxiliary/pc202012.v4.arout',]
+    '/home/lwd/Result/AP_working/rel_20201201.cf',
+    '/home/lwd/Result/auxiliary/pc202012.v4.arout',
+    '/home/lwd/Result/notexist',
+    ]
 
     e = comm()
 
@@ -122,4 +137,4 @@ if __name__ == "__main__":
         if exists(ff):
             e.compare(ff)
         else:
-            print(f'not exists: {ff}')
+            print(f'\033[7mnot exists: {ff}\033[0m')
