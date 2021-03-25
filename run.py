@@ -347,9 +347,20 @@ class Struc():
                 wf.write(line)
         wf.close()
 
+    #6125
+    # notes for c2l+apollo vote
+    # two of method is used, "Struc.apollo_it" and "Struc.vote_ap"
+    # in parts "simple", firstly, runs the "apollo_it"
+    # then, in parts "vote", runs the "vote_ap"
+    # validation is made in file "./compare.py"
+    #
+    # used to give basic infer
+    # first run the core2leaf for paths which contain the tier1 AS
+    # then go through rest path for 5 times (following apollo) \
+    # to infer paths that contain already infered link
     def apollo_it(self, path_files, output_file):
         """
-        core to leaf followed by apollo iteration
+        core to leaf followed by iterations
         """    
         link_rel_ap = dict()
         non_t1 =list()
@@ -713,8 +724,16 @@ class Struc():
         self.topoFusion = TopoFusion(10,dir,date)
         self.topoFusion.vote_among(file_list,output_file)
 
+    #6125
+    # the method is used for vote among files in varible "file_list"
+    # following method in Apollo/Stage_1.py
+    # most parts are copied from apollo and basiclly just the same
     def vote_ap(self,file_list,filename):
-        # vote from all files
+        """
+        vote from all files
+        file_list: containing all files that give their votes
+        filename: where the result puts
+        """
         links=dict()
         for file in file_list:
             with open(file,'r') as ff:
@@ -872,6 +891,7 @@ if __name__=='__main__' and vote:
         outf = join(votd,'tsv',f'ap2_bv_{date}.rel')
         struc.vote_simple_ts(tswd,date, files,outf)
 
+    #6125
     _apfiles = ['/home/lwd/Result/vote/tsv/ap2_bv_20201201.rel',
     '/home/lwd/Result/vote/tsv/ap2_bv_20201208.rel',
     '/home/lwd/Result/vote/tsv/ap2_bv_20201215.rel',
@@ -1060,6 +1080,9 @@ if __name__=='__main__' and simple:
             print(f'c2f:{p1-start}s\napollo:{p2-p1}s')
             first = False
         else:
+            #6125
+            # here, to infer groups of Toposcope vote and both methods vote
+            # output name is in form of "rel_XXXXX.apr2"
             struc.apollo_it(in_file,out_file_ap)
 
             # pass
@@ -1095,6 +1118,9 @@ if __name__=='__main__' and simple:
             print(f'c2f:{p1-start}s\napollo:{p2-p1}s')
             first = False
         else:
+            #6125
+            # here, to infer groups of apollo vote
+            # output name is in form of "rel_DATE.apr2" (4 files in different days)
             struc.apollo_it([in_file],out_file_ap)
     #TODO
     # struc.get_relation(boost_file)
