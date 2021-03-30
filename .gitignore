@@ -10,3 +10,10 @@ testfoleder/
 testfoledercopy/
 .vstags
 .vscode/
+
+**/*.txt
+**/*.ap2
+**/*.cf
+**/*.arout
+**/*.ar
+**/*.rel

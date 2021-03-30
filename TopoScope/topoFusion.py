@@ -10,6 +10,28 @@ class TopoFusion(object):
         self.prob = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))
         self.linknum = defaultdict(int)
 
+    def prob_among(self,file_list,output_file):
+        for file in file_list:
+            with open(file) as f:
+                for line in f:
+                    if line.startswith('#'):
+                        continue
+                    [asn1, asn2, rel] = line.strip().split('|')
+                    asn1, asn2 = int(asn1), int(asn2)
+                    if rel == '0':
+                        self.prob[(asn1, asn2)] += np.array([1.0, 0.0, 0.0])
+                        self.prob[(asn2, asn1)] += np.array([1.0, 0.0, 0.0])
+                    elif rel == '1':
+                        self.prob[(asn1, asn2)] += np.array([0.0, 0.0, 1.0])
+                        self.prob[(asn2, asn1)] += np.array([0.0, 1.0, 0.0])
+                    elif rel == '-1':
+                        self.prob[(asn1, asn2)] += np.array([0.0, 1.0, 0.0])
+                        self.prob[(asn2, asn1)] += np.array([0.0, 0.0, 1.0])
+                    
+                    self.linknum[(asn1, asn2)] += 1
+                    self.linknum[(asn2, asn1)] += 1
+        self.writeProbf(output_file)
+
     def vote_among(self,file_list,output_file):
         for file in file_list:
             with open(file) as f:
@@ -18,9 +40,12 @@ class TopoFusion(object):
                         continue
                     [asn1, asn2, rel] = line.strip().split('|')
                     asn1, asn2 = int(asn1), int(asn2)
-                    if rel == '0' or rel == '1':
+                    if rel == '0':
                         self.prob[(asn1, asn2)] += np.array([1.0, 0.0, 0.0])
                         self.prob[(asn2, asn1)] += np.array([1.0, 0.0, 0.0])
+                    elif rel == '1':
+                        self.prob[(asn1, asn2)] += np.array([0.0, 0.0, 1.0])
+                        self.prob[(asn2, asn1)] += np.array([0.0, 1.0, 0.0])
                     elif rel == '-1':
                         self.prob[(asn1, asn2)] += np.array([0.0, 1.0, 0.0])
                         self.prob[(asn2, asn1)] += np.array([0.0, 0.0, 1.0])
@@ -40,9 +65,14 @@ class TopoFusion(object):
                         continue
                     [asn1, asn2, rel] = line.strip().split('|')
                     asn1, asn2 = int(asn1), int(asn2)
-                    if rel == '0' or rel == '1':
+                    #TODO
+                    # apollo modify
+                    if rel == '0':
                         self.prob[(asn1, asn2)] += np.array([1.0, 0.0, 0.0])
                         self.prob[(asn2, asn1)] += np.array([1.0, 0.0, 0.0])
+                    elif rel == '1':
+                        self.prob[(asn1, asn2)] += np.array([0.0, 0.0, 1.0])
+                        self.prob[(asn2, asn1)] += np.array([0.0, 1.0, 0.0])
                     elif rel == '-1':
                         self.prob[(asn1, asn2)] += np.array([0.0, 1.0, 0.0])
                         self.prob[(asn2, asn1)] += np.array([0.0, 0.0, 1.0])

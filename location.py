@@ -14,6 +14,8 @@ raw_path_dir = abspath('/home/lwd/RIB.test/path')
 pure_path_dir = abspath('/home/lwd/RIB.test/path.test')
 apwd = abspath('/home/lwd/Result/AP_working')
 tswd = abspath('/home/lwd/Result/TS_working')
+apvd = abspath('/home/lwd/Result/vote/apv')
+tsvd = abspath('/home/lwd/Result/vote/tsv')
 auxiliary = abspath('/home/lwd/Result/auxiliary')
 
 irr_file='/home/lwd/Result/auxiliary/irr.txt'

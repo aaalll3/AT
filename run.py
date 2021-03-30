@@ -1,4 +1,5 @@
 import os
+from os import path
 import sys
 import re
 import logging
@@ -11,6 +12,7 @@ import numpy as np
 import copy, math, operator, random, scipy, sqlite3
 import matplotlib.pyplot as plt
 import lightgbm as lgb
+import xgboost as xgb
 
 from itertools import permutations
 from random import shuffle
@@ -27,6 +29,7 @@ from sklearn.model_selection import train_test_split
 
 from rib_to_read import url_form, download_rib, worker, unzip_rib
 from location import *
+from hierarchy import Hierarchy
 
 
 # TODO
@@ -41,27 +44,6 @@ log_location = abspath(join('./log',f'log_{time.time()}'))
 logging.basicConfig(filename=log_location,level=logging.INFO)
 
 
-
-# To make dataset
-class Download():
-    def __init__(self) -> None:
-        pass
-
-# To infer
-class Run():
-    def __init__(self, struc=None,infer=None,voter=None,prob=None) -> None:
-        self.struc=struc
-        self.infer=infer
-        self.voter=voter
-        self.prob=prob
-
-    def run(self):
-        if self.struc is None or \
-            self.infer is None or \
-            self.voter is None or \
-            self.prob is None:
-            logging.warn('Struc, Infer, Voter and Prob is needed')
-            return
 
 # TS: boost > get_relation > cal_hierarchy > set_VP_type > divide_TS > infer_TS > Vote_TS
 # AP: read irr > process_line_AP > write_AP > vote_AP > infer_AP
@@ -127,8 +109,7 @@ class Struc():
         self.boost_file=boost_file
         self.path_file=path_file
         self.irr_file=irr_file
-        #TODO
-        # self.dir=None
+
 
         info('[Struc.init]loading informations')
 
@@ -375,6 +356,8 @@ class Struc():
         """
         core to leaf followed by iterations
         """    
+        p1 = time.time()
+        print('ap_it start')
         link_rel_ap = dict()
         non_t1 =list()
         for path_file in path_files:
@@ -390,12 +373,14 @@ class Struc():
                         if rel != -1:
                             link_rel_ap[(ASes[i],ASes[i+1])] = 4
                         continue
-                    if(ASes[i],ASes[i+1]) in self.irr_c2p:
-                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
-                    if(ASes[i+1],ASes[i]) in self.irr_c2p:
-                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-                    if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
-                        link_rel_ap.setdefault((ASes[i],ASes[i+1]),0)
+                    #TODO
+                    #irr enable
+                    # if(ASes[i],ASes[i+1]) in self.irr_c2p:
+                    #     link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
+                    # if(ASes[i+1],ASes[i]) in self.irr_c2p:
+                    #     link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
+                    # if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
+                    #     link_rel_ap.setdefault((ASes[i],ASes[i+1]),0)
                     if ASes[i] in self.tier_1:
                         if prime_t1 == i-1:
                             link_rel_ap.setdefault((ASes[i-1],ASes[i]),0)
@@ -405,7 +390,10 @@ class Struc():
                     # if ASes[i] in self.tier_1 and ASes[i+1] in self.tier_1:
                     #     link_rel_ap.setdefault((ASes[i],ASes[i+1]),0)
             pf.close()
+        p2 = time.time()
+        print(f'done first time: {p2-p1}s')
         for turn in range(5):
+            t1= time.time()
             for ASes in non_t1:
                 idx_11 = 0
                 idx_1 = 0
@@ -441,12 +429,141 @@ class Struc():
                             link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
                             if rel != -1:
                                 link_rel_ap[(ASes[i],ASes[i+1])]=4
+            t2= time.time()
+            print(f'for it{turn}, takes {t2-t1}s')
         wf = open(output_file,'w')
         for link,rel in link_rel_ap.items():
             if rel != 4:
                 line = f'{link[0]}|{link[1]}|{rel}\n'
                 wf.write(line)
         wf.close()
+        p3= time.time()
+        print(f'iteration takes {p3-p2}s')
+        print(f'ap_it takes {p3-p1}s')
+
+    @staticmethod
+    def apollo_copy(irr_file, filelist):
+            # irr
+        with open(irr_file,'r') as f:
+            lines = f.readlines()
+        irr_c2p = set()
+        irr_p2p = set()
+        for line in lines:
+            if line.startswith('#'):
+                continue
+            tmp = re.split(r'[\s]+',line)
+            # print(tmp)
+            if tmp[2] == '1':
+                irr_c2p.add((tmp[0],tmp[1]))
+            if tmp[2] == '0':
+                irr_p2p.add((tmp[0],tmp[1]))
+        print('starting')
+        tier_1 =['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
+            '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
+        link_relation = {}
+        # src
+        # filelist = os.listdir('.')
+        non_tier_1 = []
+        wrong_path = []
+        for file in filelist:
+            if file.startswith('as_path') or True:
+                f = open(file,'r')
+                lines = f.readlines()
+                f.close()
+                for line in lines:
+                    asn = line.strip().split('|')
+                    for i in range(len(asn)-1):
+                        if (asn[i],asn[i+1]) in irr_c2p:
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
+                        if (asn[i+1],asn[i]) in irr_c2p:
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
+                        if (asn[i],asn[i+1]) in irr_p2p or (asn[i+1],asn[i]) in irr_p2p:
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(0)
+                        if asn[i] in tier_1 and asn[i+1] in tier_1 :
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(0)
+
+                    idx = -1
+                    cnt = 0
+                    for i in range(len(asn)):
+                        if asn[i] in tier_1:
+                            idx = i
+                            cnt+=1
+                    if cnt>=2 and asn[idx-1] not in tier_1:
+                        wrong_path.append(asn)
+                        continue
+                    if idx>=2:
+                        for i in range(idx-1):
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
+                    if idx<=len(asn)-2 and cnt>0:
+                        for i in range(idx+1,len(asn)-1):
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
+                    if idx == -1:
+                        non_tier_1.append(asn)
+                #print(t1_link)
+        print(len(non_tier_1))
+        for it in range(5):
+            for asn in non_tier_1:
+                idx_11 = 0
+                idx_1 = 0
+                idx_0 = 0
+                for i in range(len(asn)-1):
+                    if (asn[i],asn[i+1]) in link_relation.keys() and list(link_relation[(asn[i],asn[i+1])]) == [-1]:
+                        idx_11 = i
+                    if (asn[i],asn[i+1]) in link_relation.keys() and list(link_relation[(asn[i],asn[i+1])]) == [0]:
+                        idx_0 = i
+                    if (asn[i],asn[i+1]) in link_relation.keys() and list(link_relation[(asn[i],asn[i+1])]) == [1]:
+                        idx_1 = i
+                if idx_11 !=0:
+                    for i in range(idx_1+1,len(asn)-1):
+                        link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
+                if idx_1 !=0:
+                    for i in range(idx_0-1):
+                        link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
+                if idx_0 !=0:
+                    if idx_0>=2:
+                        for i in range(idx_0-1):
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
+                    if idx_0<=len(asn)-2:
+                        for i in range(idx_0+1,len(asn)-1):
+                            link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
+    
+            p2c_cnt = 0
+            c2p_cnt = 0
+            p2p_cnt = 0
+            dulp = 0
+            for k,v in link_relation.items():
+                if len(v)>=2:
+                    dulp +=1
+                    continue
+                if 1 in v:
+                    c2p_cnt +=1
+                if 0 in v:
+                    p2p_cnt +=1
+                if -1 in v:
+                    p2c_cnt +=1
+            print(p2c_cnt)
+            print(c2p_cnt)
+            print(p2p_cnt)
+            print(dulp)
+        result = dict()
+        conflict = 0
+        for k,v in link_relation.items():
+            if len(v)>1 and 0 in v:
+                result[k] = 0
+            elif len(v) == 1:
+                result[k] = list(v)[0]
+            else:
+                conflict +=1
+        print('conflict: ' + str(conflict))
+
+        #dst
+        print('saving')
+        f = open('./stage1_res.txt','w')
+        f.write(str(result))
+        f.close()
+        f = open('./wrong_path.txt','w')
+        f.write(str(wrong_path))
+        f.close()
 
     def clear(self,path,out):
         f = open(path,'r')
@@ -543,9 +660,11 @@ class Struc():
 
 
     # path_file, peeringdb file, AP vote out
-    def prepare_AP(self,path_file,peeringdb_file,AP_stage1_file):
+    def prepare_AP(self,path_file,peeringdb_file,ap_res_file,output_file):
         debug('[Struc.infer_AP]',stack_info=True)
         info('[Struc.infer_AP]infer AP')
+        print(f'prepare for {ap_res_file}')
+        start = time.time()
         #TODO
         #need a normal path
         # paths = BgpPaths()
@@ -553,15 +672,18 @@ class Struc():
         # paths.parse_bgp_paths('./sanitized_rib.txt')
         links = set()
         f = open(path_file,'r')
-        for line in f:
+        lines = f.readlines()
+        for line in lines:
             if '|' in line:
                 ASes = line.split("|")
                 for i in range(len(ASes)-1):
                     if (ASes[i], ASes[i+1]) not in links:
                         links.add((ASes[i], ASes[i+1]))
-                for i in range(len(ASes),0,-1):
+                for i in range(len(ASes)-1,0,-1):
                     if (ASes[i], ASes[i-1]) not in links:
                         links.add((ASes[i], ASes[i-1]))
+        p1 = time.time()
+        print(f'got link: {p1-start}s')
         tier1s = [ '174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
         g = nx.Graph()
         for link in links:
@@ -582,7 +704,7 @@ class Struc():
             node_neighbor_cnt[k] = v
         node_fea = pd.DataFrame.from_dict(node_neighbor_cnt,orient= 'index',columns= ['degree'])
         for k,v in shortest_distance_list.items():
-            node_fea.loc[k,'distance'] =int(sum(shortest_distance_list[k])/float(len(shortest_distance_list[k])))
+            node_fea.loc[k,'distance'] = int(sum(shortest_distance_list[k])/float(len(shortest_distance_list[k])))
         up_distance_cnt = {}
         down_distance_cnt = {}
         same_distance_cnt= {}
@@ -608,9 +730,11 @@ class Struc():
             node_fea.loc[k,'down-distance'] =v
         for k,v in same_distance_cnt.items():
             node_fea.loc[k,'same-distance'] =v
+        p2 = time.time()
+        print(f'got distance: {p2-p1}s')
         #每个link被多少个vp观测到
         vp_cnt = {}
-        for line in f:
+        for line in lines:
             if '|' in line:
                 ASes = line.split("|")
                 vp = ASes[0]
@@ -622,7 +746,8 @@ class Struc():
                     vp_cnt[(ASes[i+1], ASes[i])].add(vp)
         for link in vp_cnt:
             vp_cnt[link] = len(vp_cnt[link])
-
+        p3 = time.time() 
+        print(f'got vp: {p3-p1}s')
         #ixp
         ixp_dict = {}
         colocated_ixp = defaultdict(int)
@@ -636,6 +761,17 @@ class Struc():
                     ixp_dict[ixp] = [AS]
                 else:
                     ixp_dict[ixp].append(AS)
+        elif peeringdb_file.endswith('sqlite3'):
+            conn = sqlite3.connect(peeringdb_file)
+            c = conn.cursor()
+            for row in c.execute("SELECT asn, ixlan_id FROM 'peeringdb_network_ixlan'"):
+                AS, ixp = row[0], row[1]
+                if ixp not in ixp_dict:
+                    ixp_dict[ixp] = [AS]
+                else:
+                    ixp_dict[ixp].append(AS)
+
+
         for k, v in ixp_dict.items():
             as_pairs = [(str(p1), str(p2)) for p1 in v for p2 in v if p1 != p2]
             for pair in as_pairs:
@@ -656,6 +792,15 @@ class Struc():
                     facility_dict[facility] = [AS]
                 else:
                     facility_dict[facility].append(AS)
+        elif peeringdb_file.endswith('sqlite3'):
+            conn = sqlite3.connect(peeringdb_file)
+            c = conn.cursor()
+            for row in c.execute("SELECT local_asn, fac_id FROM 'peeringdb_network_facility'"):
+                AS, facility = row[0], row[1]
+                if facility not in facility_dict:
+                    facility_dict[facility] = [AS]
+                else:
+                    facility_dict[facility].append(AS)
 
         for k, v in facility_dict.items():
             as_pairs = [(str(p1), str(p2)) for p1 in v for p2 in v if p1 != p2]
@@ -664,10 +809,19 @@ class Struc():
         for link in links:
                 if link not in colocated_facility:
                     colocated_facility[link] = 0
+        p4 = time.time()
+        print(f'got peer: {p4-p3}s')
 
         #label
-        with open('./stage1_final.txt','r') as f:
-            result = eval(f.read())
+        with open(ap_res_file,'r') as f:
+            result=dict()
+            for line in f:
+                if line.startswith('#'):
+                    continue
+                line = line.strip().split('|')
+                link=(line[0],line[1])
+                rel = int(line[2])
+                result[link]=rel
         label = defaultdict(int)
         for link in links:
             if link not in result:
@@ -714,7 +868,9 @@ class Struc():
         link_fea = pd.DataFrame(link_arr,columns=['link','degree1','distance1','up-distance1','down-distance1','same-distance1',
                                                   'degree2','distance2','up-distance2','down-distance2','same-distance2','vp_cnt',
                                                  'colocated_ixp','colocated_facility','label'])
-        link_fea.to_csv('fea.csv',index=False)
+        link_fea.to_csv(output_file,index=False)
+        end  = time.time() 
+        print(f'done: {end-p4}s,{end-start}s')
     
     def vote_TS(self,dir,date):
         debug('[Struc.vote_TS]',stack_info=True)
@@ -795,8 +951,10 @@ class Struc():
             Struc.AP_to_read(AP_stage1_file,AP_stage1_file.replace('st1','apr'))
 
 class Links(object):
-    def __init__(self, dir_name, org_name, peering_name):
-        self.dir = dir_name
+    def __init__(self, org_name, peering_name,rel_file,prob_file,path_file):
+        self.rel_file=rel_file
+        self.prob_file=prob_file
+        self.path_file=path_file
         self.org_name = org_name
         self.peering_name = peering_name
         self.prob = dict()
@@ -818,7 +976,7 @@ class Links(object):
         self.adjanceTypeRatio = dict()
         self.degreeRatio = dict()
         self.vppos = dict()
-        self.tier = Hierarchy(self.dir + 'asrel_prime_prob.txt')
+        self.tier = Hierarchy(self.prob_file)
 
         self.ingestProb()
         self.extractSiblings()
@@ -826,14 +984,14 @@ class Links(object):
     def ingestProb(self):
         self.edge_finish = set()
         #TODO
-        with open(self.dir + 'asrel_prime_prime.txt') as f:
+        with open(self.rel_file) as f:
             for line in f:
                 if not line.startswith('#'):
                     [asn1, asn2, rel] = line.strip().split('|')
                     self.edge_finish.add((asn1, asn2))
                     self.edge_finish.add((asn2, asn1))
         #TODO
-        with open(self.dir + 'asrel_prime_prob.txt') as f:
+        with open(self.prob_file) as f:
             for line in f:
                 if not line.startswith('#'):
                     [asn1, asn2, rel, p2p, p2c, c2p] = line.strip().split('|')[:6]
@@ -857,7 +1015,7 @@ class Links(object):
     def parseBGPPaths(self):
         forwardPath, reversePath = set(), set()
         #TODO
-        with open('aspaths.txt') as f:
+        with open(self.path_file) as f:
             for line in f:
                 if line.strip() == '':
                     continue
@@ -908,7 +1066,10 @@ class Links(object):
             tmp = list()
             for i in range(4):
                 for j in range(4):
-                    tripletRel[edge][i][j] = round(tripletRel[edge][i][j]/trs/0.1)
+                    if trs ==0:
+                        tripletRel[edge][i][j] = 0
+                    else:
+                        tripletRel[edge][i][j] = round(tripletRel[edge][i][j]/trs/0.1)
                     tmp.append(tripletRel[edge][i][j])
             self.tripletRel[edge] = copy.deepcopy(tmp)
     
@@ -971,7 +1132,7 @@ class Links(object):
                 else:
                     facility_dict[facility].append(AS)
 
-        elif self.peering_name.endswith('sqlite'):
+        elif self.peering_name.endswith('sqlite3'):
             conn = sqlite3.connect(self.peering_name)
             c = conn.cursor()
             for row in c.execute("SELECT asn, ixlan_id FROM 'peeringdb_network_ixlan'"):
@@ -1052,12 +1213,12 @@ class Links(object):
         self.assignIXPFacility()
         self.assignAdjanceTypeRatio()
 
-def output(final_prob, link):
+def output(final_prob, link,output_path):
     link_infer = list(link.edge_infer)
     link_finish = list(link.edge_finish)
     link_all = link_finish + link_infer
     
-    outputRel = open('asrel_toposcope.txt', 'w')
+    outputRel = open(output_path, 'w')
     inferredLink = set()
     tier1s = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '4436', '5511', '6453', '6461', '6762', '7018', '12956', '3549']
 
@@ -1091,7 +1252,7 @@ def output(final_prob, link):
         elif c2p > p2p and c2p > p2c:
             outputRel.write('|'.join((str(AS2), str(AS1), '-1')) + '\n')
 
-def BayesNetwork(link):
+def BayesNetwork(link,output_file):
     link_infer = list(link.edge_infer)
     link_finish = list(link.edge_finish)
     link_all = link_finish + link_infer
@@ -1140,14 +1301,15 @@ def BayesNetwork(link):
             x = link_feature_order[j][i]
             temp_prob = (f_prob[x][0] + 1e-10, f_prob[x][1] + 1e-10, f_prob[x][2] + 1e-10)
             final_prob[edge] = tuple(map(lambda x, y: x + y, final_prob[edge], tuple(map(lambda x: math.log10(x), temp_prob))))
-    output(final_prob, link)
+    output(final_prob, link,output_file)
 
-def BN_go():
-    link = Links(args.dir_name, args.org_name, args.peering_name)
+def BN_go(org_name,peering_name,rel_file,prob_file,path_file,output_file):
+    link = Links(org_name, peering_name,rel_file,prob_file,path_file)
     link.constructAttributes()
-    BayesNetwork(link)
+    BayesNetwork(link,output_file)
 
 def GetCred(y_fraud_train,K,ind):
+    y_fraud_train = np.array(y_fraud_train)
     N = ind.shape[0]
     Cred = [[0,0,0] for i in range(N)]
     for i in range(N):
@@ -1189,7 +1351,7 @@ def pro_knn_trains(X,Y,T,pred_X,ind,K,epoch):
     Cred = GetCred(Y,K,ind)
     print("cred done!")
     #model = lgb.LGBMClassifier(params)
-    N = T.shape[0]
+    N = len(T)
     y_final = np.zeros(N)
     infer_res = []
     print("start train")
@@ -1214,42 +1376,172 @@ def pro_knn_trains(X,Y,T,pred_X,ind,K,epoch):
         train_data = lgb.Dataset(X_train,label=y_train)
         validation_data = lgb.Dataset(X_test,label=y_test)
         model=lgb.train(params,train_data,num_round,valid_sets=[validation_data],early_stopping_rounds = 100)
+
+        # dtrain=xgb.DMatrix(X_train,label=y_train)
+        # dtest=xgb.DMatrix(X_test,label=y_test)
+        # evallist = [(dtest, 'eval'), (dtrain, 'train')]
+        # model=xgb.train(parms,dtrain,num_round,evals=evallist,early_stopping_rounds=100)
         pred = model.predict(pred_X)
         infer_res.append(pred)
     return infer_res
 
+# def xgb_knn_trains(X,Y,T,pred_X,ind,K,epoch):
+#     Cred = GetCred(Y,K,ind)
+#     print("cred done!")
+#     #model = lgb.LGBMClassifier(params)
+#     N = len(T)
+#     y_final = np.zeros(N)
+#     infer_res = []
+#     print("start train")
+#     num_round = 1000
+#     for j in range(epoch):
+#         print("epoch:" + str(j))
+#         seed = j*1234
+#         rng = np.random.RandomState(seed)
+#         Pr = rng.rand(1,N)
+#         for i in range(N):
+#             left = Cred[i][0]
+#             right = Cred[i][0]+Cred[i][1]
+#             if(Pr[0][i] <= left ):
+#                 y_final[i] = 0
+#             elif(Pr[0][i] <= right ):
+#                 y_final[i] = 1
+#             if(Pr[0][i] > right):
+#                 y_final[i] = 2
+#         X_data = np.concatenate((X,T),axis=0)
+#         Y_data = np.concatenate((Y,y_final),axis=0)
+#         X_train,X_test,y_train,y_test=train_test_split(X_data,Y_data,test_size=0.2)
+#         dtrain=xgb.DMatrix(X_train,label=y_train)
+#         dtest=xgb.DMatrix(X_test,label=y_test)
+#         evallist = [(dtest, 'eval'), (dtrain, 'train')]
+#         param={
+#             'boosting_type': 'gbdt',  
+#             'objective': 'multiclass',  
+#             'num_class': 3,  
+#             'metric': 'multi_error',  
+#             'num_leaves': 300,  
+#             'min_data_in_leaf': 500,  
+#             'learning_rate': 0.01,  
+#             'feature_fraction': 0.8,  
+#             'bagging_fraction': 0.8,  
+#             'bagging_freq': 5,  
+#             'lambda_l1': 0.4,  
+#             'lambda_l2': 0.5,  
+#             'min_gain_to_split': 0.2,  
+#             'verbose': -1,
+#             'num_threads':4
+#         }
+#         model=xgb.train(param,dtrain,num_round,evals=evallist,early_stopping_rounds=100)
+#         pred_X = xgb.DMatrix(pred_X)
+#         pred = model.predict(pred_X)
+#         infer_res.append(pred)
+#     return infer_res
 
-def run():
-    df = pd.read_csv('fea.csv')
+def NN_go(input_file,output):
+    p1 = time.time()
+    df = pd.read_csv(input_file)
+
+    trust = df.loc[df['label']!=3]
+    trust_Y=trust['label'].astype(int).values
+    # trust_x=trust.drop(['link','label'],axis = 1).astype(float)
+    # trust_X = preprocessing.MinMaxScaler().fit_transform(trust_x.values)
+    
+    ud = df.loc[df['label']==3]
+    ud_Y=ud['label']
+    # ud_x=ud.drop(['link','label'],axis = 1).astype(float)
+    # ud_X = preprocessing.MinMaxScaler().fit_transform(ud_x.values)
+
+    trust_X=[]
+    ud_X=[]
     Y = df['label'].astype(int).values
-    x = df.drop(['link','label'],axis = 1).astype(float)
+    x = df.drop(['link','label','distance1','distance2'],axis = 1).astype(float)
     X = preprocessing.MinMaxScaler().fit_transform(x.values)
+    # print(np.isnan(x).any())
+    # input()
+    for idx in trust.index:
+        trust_X.append(X[idx])
+    for idx in ud.index:
+        ud_X.append(X[idx])
+        # for i in X[idx]:
+            # print(i)
+    print('read labels')
+    # print('len',len(trust_X))
+    print('constructing kdtree')
     neigh = NearestNeighbors(n_neighbors = 100, algorithm = 'kd_tree',n_jobs = 4)
-    neigh.fit(X)
-    dis,ind = neigh.kneighbors(T,100)
-
+    neigh.fit(trust_X)
+    print('construction complete')
+    print('searching knn')
+    dis,ind = neigh.kneighbors(ud_X,100)
+    p2 = time.time()
+    print(f'searched knn: {p2-p1}s')
     k = 100
     epoch = 50
-    y_prob1= pro_knn_trains(X,Y,T,pred_x,ind,k,epoch)
+    y_prob1= pro_knn_trains(trust_X,trust_Y,ud_X,ud_X,ind,k,epoch)
 
-    res = []
-    for epoch_i in y_prob1:
-        infer = []
-        for i in epoch_i:
-            infer.append(np.argmax(i))
-        res.append(infer)
+    # res = []
+    # for epoch_i in y_prob1:
+    #     infer = []
+    #     for i in epoch_i:
+    #         infer.append(np.argmax(i))
+    #     res.append(infer)
+    p3 = time.time()
+    print(f'outputing: {p3-p2}')
+    res = np.array(y_prob1)
+    res = np.mean(res,axis=0)
+    ud['label']=res
+    final = df[['link','label']]
+    for index, row in ud.iterrows():
+        final.at[index,'label']=row['label']
+    
+    f = open(output,'w')
+    for index,row in final.iterrows():
+        link = row['link']
+        rel = row['label']
+        a1=link[0].strip()
+        a2=link[1].strip()
+        a1,a2 = link.split(',')
+        a1= a1.replace('(','')
+        a1=a1.replace(')','')
+        a1=a1.replace('\'','')
+        a1=a1.replace('\\n','')
+        a2=a2.replace('(','')
+        a2=a2.replace(')','')
+        a2=a2.replace('\'','')
+        a2=a2.replace('\\n','')
+        a1=a1.strip()
+        a2=a2.strip()
+        rel-=1
+        f.write(f'{a1}|{a2}|{rel}\n')
+    f.close()
+    p4 = time.time()
+    print(f'output time: {p4-p3}s')
+    print(f'finished computation {input_file}: {p4-p1}s')
+
+
+#ENABLE
+preview = True
 
 clear = False
 
 test = False
 
-vote = True
+vote = False
 
 cross = False
 
 simple = False
 
+prepare2 = False
 
+prob = False
+
+bngoo = False
+
+nngoo = True
+
+if __name__=='__main__' and preview:
+    checke('/home/lwd/Result/AP_working/ar_tsv_month.feap.csv')
+    NN_go('/home/lwd/Result/AP_working/ar_tsv_month.feap.csv','ar_nn.rel')
 
 if __name__=='__main__' and clear:
     irr_file='/home/lwd/Result/auxiliary/irr.txt'
@@ -1269,18 +1561,103 @@ if __name__=='__main__' and clear:
     quit()
 
 if __name__=='__main__' and test:
-    read_dir='/home/lwd/Result/AP_working/'
-    # read='/home/lwd/Result/AP_working/rel_20201222.st1'
-    names = os.listdir(read_dir)
-    for name in names:
-        if name.endswith('.st1'):
-            newname = name.replace('st1','apr')
-            read = join(read_dir,name)
-            write= join(read_dir,newname)
-            print(read)
-            print(write)
-            print(f'working on {read}')
-            Struc.AP_to_read(read,write)
+    print('start')
+
+    group_size=25
+    irr_file='/home/lwd/Result/auxiliary/low_trust.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc202012.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
+
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    auxd = join(r_dir,'auxiliary')
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+    votd = join(r_dir,'vote')
+
+    # TS simple infer 
+    ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
+
+    # boost_file = join(tswd,boost_file)
+    path_dir = s_dir
+    # def checke(path):
+    #     if exists(path):
+    #         print(f'ready:{path}')
+    #     else:
+    #         print(f'not exists:{path}')
+
+    name = 'pc202012.v4.u.path.clean'
+    path_file = join(s_dir,name)
+
+    checke(irr_file)
+    checke(boost_file)
+    checke(path_dir)
+    checke(path_file)
+    checke(ar_version)
+    checke(auxd)
+    checke(tswd)
+    checke(apwd)
+    date='wholemonth'
+    # print(f'date:{date}')
+    while True:
+        a = input('continue?')
+        if a == 'y':
+            break
+        elif a =='n':
+            quit()
+    
+    struc = Struc()
+    struc.read_irr(irr_file)
+    in_files=[
+        '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201208.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201215.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201222.v4.u.path.clean',
+    ]
+    out_files=[
+        '/home/lwd/Result/AP_working/rel_20201201_low.ap2',
+        '/home/lwd/Result/AP_working/rel_20201208_low.ap2',
+        '/home/lwd/Result/AP_working/rel_20201215_low.ap2',
+        '/home/lwd/Result/AP_working/rel_20201222_low.ap2',
+        ]
+
+    # struc.apollo_it()
+    # Struc.apollo_copy(irr_file,in_files)
+    # Struc.AP_to_read('./stage1_res.txt','./stage1.rel')
+    
+    test_out='./test_no_irr_true.ap2'
+    struc.apollo_it(in_files,test_out)
+    quit()
+    # for in_file,out_file in zip(in_files,out_files):
+    #     print(in_file)
+    #     print(out_file)
+    
+    # while True:
+    #     a = input('continue?')
+    #     if a == 'y':
+    #         break
+    #     elif a =='n':
+    #         quit()
+    # vg vb
+    # for in_file,out_file in zip(in_files,out_files):
+    #     print(in_file)
+    #     print(out_file)
+    #     struc.apollo_it([in_file],out_file)
+
+    _apfiles = ['/home/lwd/Result/AP_working/rel_20201201_low.ap2',
+    '/home/lwd/Result/AP_working/rel_20201208_low.ap2',
+    '/home/lwd/Result/AP_working/rel_20201215_low.ap2',
+    '/home/lwd/Result/AP_working/rel_20201222_low.ap2',]
+    outf = join(votd,'apv','ap2_apv_low.rel')
+    struc.vote_ap(_apfiles,outf)
+
+
+    
     quit()
 
 if __name__=='__main__' and vote:
@@ -1345,10 +1722,11 @@ if __name__=='__main__' and vote:
         struc.vote_simple_ts(tswd,date, files,outf)
 
     #6125
-    _apfiles = ['/home/lwd/Result/vote/tsv/ap2_bv_20201201.rel',
-    '/home/lwd/Result/vote/tsv/ap2_bv_20201208.rel',
-    '/home/lwd/Result/vote/tsv/ap2_bv_20201215.rel',
-    '/home/lwd/Result/vote/tsv/ap2_bv_20201222.rel',]
+    _apfiles = [
+        '/home/lwd/Result/vote/tsv/ap2_bv_20201201.rel',
+        '/home/lwd/Result/vote/tsv/ap2_bv_20201208.rel',
+        '/home/lwd/Result/vote/tsv/ap2_bv_20201215.rel',
+        '/home/lwd/Result/vote/tsv/ap2_bv_20201222.rel',]
     outf = join(votd,'apv','ap2_bv.rel')
     struc.vote_ap(_apfiles,outf)    
 
@@ -1450,10 +1828,6 @@ if __name__=='__main__' and simple:
     auxd = join(r_dir,'auxiliary')
     tswd = join(r_dir,ts_working_dir)
     apwd = join(r_dir,ap_working_dir)
-
-    
-
-
 
     # TS simple infer 
     ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
@@ -1583,7 +1957,243 @@ if __name__=='__main__' and simple:
     # struc.infer_TS(tswd,ar_version,date)
     quit()
 
+if __name__=='__main__' and prepare2:
+    irr_file='irr.txt'
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
+
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    auxd = join(r_dir,'auxiliary')
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+
+    votd = join(r_dir,'vote')
+
+
+    tsfiles=[
+
+    '/home/lwd/Result/vote/apv/ap2_apv.rel',
+    '/home/lwd/Result/vote/apv/tsf.rel',
+
+    '/home/lwd/Result/vote/apv/ap2_bv.rel',
+    '/home/lwd/Result/vote/apv/tsf_apf.rel',
+
+    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    ]
+
+    apfiles=[
+
+    '/home/lwd/Result/vote/apv/ap2_apv.rel',
+    '/home/lwd/Result/vote/apv/tsf.rel',
+
+    '/home/lwd/Result/vote/apv/ap2_bv.rel',
+    '/home/lwd/Result/vote/apv/tsf_apf.rel',
+
+    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    ]
+
+    struc = Struc()
+    struc.read_irr(irr_file)
+    path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
+    peeringdb_file='/home/lwd/Result/auxiliary/peeringdb.sqlite3'
+    files = tsfiles+apfiles
+    for name in files:
+        tmp = name.split('/')[-1]
+        outname=tmp.replace('.rel','.feap.csv')
+        outname=join('/home/lwd/Result/AP_working',outname)
+        struc.prepare_AP(path_file,peeringdb_file,name,outname)
+
+    quit()
+
+if __name__=='__main__' and prob:
+    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
+
+    # nohup perl ./asrank_irr.pl --clique 174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956 --filtered ~/RIB.test/path.test/pc20201201.v4.u.path.clean > /home/lwd/Result/auxiliary/pc20201201.v4.arout &
+
+    s_dir='/home/lwd/RIB.test/path.test'
+    r_dir='/home/lwd/Result'
+
+    ts_working_dir='TS_working'
+    ap_working_dir='AP_working'
+
+    auxd = join(r_dir,'auxiliary')
+    tswd = join(r_dir,ts_working_dir)
+    apwd = join(r_dir,ap_working_dir)
+
+    votd = join(r_dir,'vote')
+
+    tsfiles = os.listdir(tswd)
+    apfiles = os.listdir(apwd)
+
+    _tsfiles=dict()
+    _apfiles=[]
+    # for n in tsfiles:
+    #     if n.endswith('.ar'):
+    #         res = re.match(r'^rel_([0-9]+)',n)
+    #         today=None
+    #         if res is not None:
+    #             date = res.group(1)
+    #             name = join(tswd,n)
+    #             today = _tsfiles.setdefault(date,[]).append(name)
+    #         else:
+    #             continue
+    for n in tsfiles:
+        if n.endswith('.apr2'):
+            res = re.match(r'^rel_([0-9]+)',n)
+            today=None
+            if res is not None:
+                date = res.group(1)
+                name = join(tswd,n)
+                today = _tsfiles.setdefault(date,[]).append(name)
+            else:
+                continue
+
+    for n in apfiles:
+        if n.endswith('.apr'):
+            name = join(apwd,n)
+            _apfiles.append(name)
+
+    struc = Struc()
+    struc.read_irr(irr_file)
+    
+    _apfiles = [
+    '/home/lwd/Result/vote/tsv/tsf_20201201.rel',
+    '/home/lwd/Result/vote/tsv/tsf_20201208.rel',
+    '/home/lwd/Result/vote/tsv/tsf_20201215.rel',
+    '/home/lwd/Result/vote/tsv/tsf_20201222.rel',]
+    outf = join(votd,'apv','ar_apv.rel')
+    # struc.vote_ap(_apfiles,outf)   
+    struc.topoFusion = TopoFusion(4,dir,date)
+    struc.topoFusion.prob_among(_apfiles,outf)
+
+
+
+    _apfiles = [
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201201.rel',
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201208.rel',
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201215.rel',
+    '/home/lwd/Result/vote/tsv/ap2_bv_20201222.rel',]
+    outf = join(votd,'apv','ap2_bv.rel')
+    # struc.vote_ap(_apfiles,outf)   
+    struc.topoFusion = TopoFusion(4,dir,date)
+    struc.topoFusion.prob_among(_apfiles,outf)
+
+    _apfiles = [
+    '/home/lwd/Result/auxiliary/pc20201201.v4.arout',
+    '/home/lwd/Result/auxiliary/pc20201208.v4.arout',
+    '/home/lwd/Result/auxiliary/pc20201215.v4.arout',
+    '/home/lwd/Result/auxiliary/pc20201222.v4.arout',]
+    outf = join(votd,'apv','tsf_apf.rel')
+    struc.topoFusion = TopoFusion(4,dir,date)
+    struc.topoFusion.prob_among(_apfiles,outf)
+
+    _apfiles = [
+    '/home/lwd/Result/AP_working/rel_20201201.apr2',
+    '/home/lwd/Result/AP_working/rel_20201208.apr2',
+    '/home/lwd/Result/AP_working/rel_20201215.apr2',
+    '/home/lwd/Result/AP_working/rel_20201222.apr2',]
+    outf = join(votd,'apv','ap2_apv.rel')
+    struc.topoFusion = TopoFusion(4,dir,date)
+    struc.topoFusion.prob_among(_apfiles,outf)
+
+    quit()
+
+if __name__=='__main__' and bngoo:
+    org_name= join(auxiliary,'20201001.as-org2info.txt')
+    peering_name= join(auxiliary,'peeringdb.sqlite3')
+
+    tsfiles=[
+
+    '/home/lwd/Result/vote/apv/ap2_apv.rel',
+    '/home/lwd/Result/vote/apv/tsf.rel',
+
+    '/home/lwd/Result/vote/apv/ap2_bv.rel',
+    '/home/lwd/Result/vote/apv/tsf_apf.rel',
+
+    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    ]
+    apfiles=[
+
+    '/home/lwd/Result/vote/apv/ap2_apv.rel',
+    '/home/lwd/Result/vote/apv/tsf.rel',
+
+    '/home/lwd/Result/vote/apv/ap2_bv.rel',
+    '/home/lwd/Result/vote/apv/tsf_apf.rel',
+
+    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    ]
+
+
+    rels = tsfiles + apfiles
+    checke(org_name)
+    checke(peering_name)
+    # prob = 
+    path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
+    for name in rels:
+        print(f'computing {name}')
+        p1 = time.time()
+        outname = name.strip().split('/')[-1]
+        outname = outname+'.bn'
+        outname = join('/home/lwd/Result/BN',outname)
+        checke(name)
+        checke(name+'.prob')
+        BN_go(org_name,peering_name,name,name+'.prob',path_file,outname)
+        p2 = time.time()
+        print(f'done: {p2-p1}seconds')
+    quit()
+
+if __name__=='__main__' and nngoo:
+    tsfiles=[
+
+    '/home/lwd/Result/vote/apv/ap2_apv.rel',
+    '/home/lwd/Result/vote/apv/tsf.rel',
+
+    '/home/lwd/Result/vote/apv/ap2_bv.rel',
+    '/home/lwd/Result/vote/apv/tsf_apf.rel',
+
+    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
+    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    ]
+    apfiles=[
+
+    '/home/lwd/Result/AP_working/ap2_apv.feap.csv',
+    '/home/lwd/Result/AP_working/tsf.feap.csv',
+
+    '/home/lwd/Result/AP_working/ap2_bv.feap.csv',
+    '/home/lwd/Result/AP_working/tsf_apf.feap.csv',
+
+    '/home/lwd/Result/AP_working/ap2_tsv_month.feap.csv',
+    '/home/lwd/Result/AP_working/ar_tsv_month.feap.csv',
+    ]
+
+
+    rels = apfiles
+    path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
+    for name in rels:
+        print(f'computing {name}')
+        p1 = time.time()
+        outname = name.strip().split('/')[-1]
+        outname = outname+'.nn'
+        outname = join('/home/lwd/Result/NN',outname)
+        checke(name)
+        NN_go(name,outname)
+        p2 = time.time()
+        print(f'done: {p2-p1}seconds')
+    quit()
 if __name__=='__main__':
+    quit()
     print('start')
 
     group_size=25

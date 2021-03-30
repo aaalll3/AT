@@ -1,9 +1,5 @@
 import os
 import re
+import collections
 
-
-
-h = [1,2,3]
-
-[a,b,c ]=h
-print(a,b,c)
+import networkx as nx
