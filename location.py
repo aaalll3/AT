@@ -10,6 +10,10 @@ def checke(path):
     else:
         print(f'not exists:{path}')
 
+
+loc_raw_data_dir = abspath('/home/lwd/RIB.test/')
+loc_result_dir = abspath('/home/lwd/Result/')
+
 raw_path_dir = abspath('/home/lwd/RIB.test/path')
 pure_path_dir = abspath('/home/lwd/RIB.test/path.test')
 apwd = abspath('/home/lwd/Result/AP_working')

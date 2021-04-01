@@ -1003,6 +1003,7 @@ if($opt eq "table-transit-raw")
 # members of the clique are disjoint are discarded.
 #
 # set ASN as clique as giving clique string
+$clique_string = "174 209 286 701 1239 1299 2828 2914 3257 3320 3356 3491 5511 6453 6461 6762 6830 7018 12956";
 if(defined($clique_string))
 {
     $clique{$_} = 1 foreach(split(/\s+/, $clique_string));

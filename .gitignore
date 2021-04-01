@@ -17,3 +17,7 @@ testfoledercopy/
 **/*.arout
 **/*.ar
 **/*.rel
+
+pg.json
+cmp.md
+model.py
