@@ -566,17 +566,24 @@ class Struc():
         f.write(str(wrong_path))
         f.close()
 
-    @staticmethod
-    def c2f_unary(infile, outfile):
+    def c2f_unary(self,infile, outfile,it=True):
         tier1s = [ '174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
         untouched = []
         link2rel = {}
         last_tier1 = 10000
+        print(f'start uny for {infile}')
         with open(infile,'r') as ff:
             for line in ff:
                 if line.startswith('#'):
                     continue
                 ASes = line.strip().split('|')
+                for i in range(len(ASes)-1):
+                    if (ASes[i],ASes[i+1]) in self.irr_c2p:
+                        link2rel[(ASes[i],ASes[i+1])]=1
+                    if (ASes[i+1],ASes[i]) in self.irr_c2p:
+                        link2rel[(ASes[i],ASes[i+1])]=-1
+                    if (ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
+                        link2rel[(ASes[i],ASes[i+1])]=0
                 for i in range(len(ASes)):
                     if ASes[i] in tier1s:
                         if last_tier1 == i-1:
@@ -586,10 +593,13 @@ class Struc():
                     link2rel[ASes[i],ASes[i+1]]=-1
                 if last_tier1 == 10000:
                     untouched.append(ASes)
-        while(True):
+        cnt = 0
+        while(it):
+            cnt +=1
             tmp_untouched=[]
             last_p2c = 10000
             convert = False
+            print(f'it {cnt}: for {len(untouched)}')
             for ASes in untouched:
                 for i in range(len(ASes)-1):
                     rel = link2rel.get((ASes[i],ASes[i+1]))
@@ -726,9 +736,12 @@ class Struc():
                 for i in range(len(ASes)-1):
                     if (ASes[i], ASes[i+1]) not in links:
                         links.add((ASes[i], ASes[i+1]))
-                for i in range(len(ASes)-1,0,-1):
-                    if (ASes[i], ASes[i-1]) not in links:
-                        links.add((ASes[i], ASes[i-1]))
+                        links.add((ASes[i+1], ASes[i]))
+                        # if ASes[i] == '271069' or ASes[i]=='267094':
+                        #     print('fuck u 271069,267094')
+                # for i in range(len(ASes)-1,0,-1):
+                #     if (ASes[i], ASes[i-1]) not in links:
+                #         links.add((ASes[i], ASes[i-1]))
         p1 = time.time()
         print(f'got link: {p1-start}s')
         tier1s = [ '174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
@@ -874,6 +887,17 @@ class Struc():
                 label[link] = result[link]+1
         link_arr = []
         for link in links:
+            skip = False
+            for i in list(node_fea.loc[link[0]]):
+                if np.isnan(i):
+                    skip = True
+                    break
+            for i in list(node_fea.loc[link[1]]):
+                if np.isnan(i):
+                    skip = True
+                    break
+            if skip:
+                continue
             tmp = []
             tmp.append(link)
             tmp.append(node_fea.loc[link[0],'degree'])
@@ -1474,19 +1498,31 @@ def NN_go(input_file,output):
 
     trust_X=[]
     ud_X=[]
+    def safe_drop(df,key):
+        ch = np.array(df[key].astype(float))
+        if np.isnan(ch).any():
+            for i in np.nditer(np.where(np.isnan(ch))):
+                df = df.drop([i],axis=0)
+        return df
+    
+    # df = safe_drop(df,'distance1')
+    # df = safe_drop(df,'distance2')
+    # node = np.array(df['link'].astype(str))
+    # print(node[200435],ch[200435])
+    # print(node[542146],ch[542146])
+    # print(df.at[200435,'distance1'])
     Y = df['label'].astype(int).values
-    x = df.drop(['link','label','distance1','distance2'],axis = 1).astype(float)
+    x = df.drop(['link','label'],axis = 1).astype(float)
     X = preprocessing.MinMaxScaler().fit_transform(x.values)
-    # print(np.isnan(x).any())
-    # input()
-    for idx in trust.index:
+    # print(np.where(np.isnan(ch)))
+    ud_loc2idx=[]
+    for loc,idx in enumerate(trust.index):
         trust_X.append(X[idx])
-    for idx in ud.index:
+    for loc, idx in enumerate(ud.index):
         ud_X.append(X[idx])
-        # for i in X[idx]:
-            # print(i)
+        ud_loc2idx.append(idx)
+    print(len(ud_X))
     print('read labels')
-    # print('len',len(trust_X))
     print('constructing kdtree')
     neigh = NearestNeighbors(n_neighbors = 100, algorithm = 'kd_tree',n_jobs = 4)
     neigh.fit(trust_X)
@@ -1509,10 +1545,20 @@ def NN_go(input_file,output):
     print(f'outputing: {p3-p2}')
     res = np.array(y_prob1)
     res = np.mean(res,axis=0)
-    ud['label']=res
+    res = np.argmax(res,axis=1)
+    res = res -1
+    # ud['label']=res
+    # ccnt =0
     final = df[['link','label']]
-    for index, row in ud.iterrows():
-        final.at[index,'label']=row['label']
+    for loc, idx in enumerate(ud_loc2idx):
+        final.at[idx,'label']=res[loc]
+    # for  cnt, (index, row) in enumerate(ud.iterrows()):
+    #     row['label']=res[cnt]
+    #     ccnt = cnt
+    # print(cnt)
+    # final = df[['link','label']]
+    # for index, row in ud.iterrows():
+    #     final.at[index,'label']=row['label']
     
     f = open(output,'w')
     for index,row in final.iterrows():
@@ -1547,9 +1593,9 @@ preview = False
 
 clear = False
 
-test = False
+test = True
 
-irr = True
+irr = False
 
 run = False
 
@@ -1587,10 +1633,11 @@ if __name__=='__main__' and preview:
     tmp = name.split('/')[-1]
     outname=tmp.replace('.rel','.fea.csv')
     outname=join('/home/lwd/Result/AP_working',outname)
-    struc.prepare_AP(path_file,peeringdb_file,name,outname)
 
-    outname= join('/home/lwd/Result/NN','ap2_apv_nn.rel')
-    checke('/home/lwd/Result/AP_working/ap2_apv.fea.csv')
+    # struc.prepare_AP(path_file,peeringdb_file,name,outname)
+
+    outname= join('/home/lwd/Result/NN','ap2_apv_nn_pv.rel')
+    # checke('/home/lwd/Result/AP_working/ap2_apv.fea.csv')
     NN_go('/home/lwd/Result/AP_working/ap2_apv.fea.csv',outname)
 
 if __name__=='__main__' and clear:
@@ -1611,7 +1658,7 @@ if __name__=='__main__' and clear:
     quit()
 
 if __name__=='__main__' and test:
-    print('start')
+    print('start test')
 
     group_size=25
     irr_file='/home/lwd/Result/auxiliary/high_trust.txt'
@@ -1662,16 +1709,43 @@ if __name__=='__main__' and test:
         '/home/lwd/RIB.test/path.test/pc20201215.v4.u.path.clean',
         '/home/lwd/RIB.test/path.test/pc20201222.v4.u.path.clean',
     ]
+
     out_files=[
-        '/home/lwd/Result/AP_working/rel_20201201.ap2',
-        '/home/lwd/Result/AP_working/rel_20201208.ap2',
-        '/home/lwd/Result/AP_working/rel_20201215.ap2',
-        '/home/lwd/Result/AP_working/rel_20201222.ap2',
+        '/home/lwd/Result/AP_working/rel_20201201.uny',
+        '/home/lwd/Result/AP_working/rel_20201208.uny',
+        '/home/lwd/Result/AP_working/rel_20201215.uny',
+        '/home/lwd/Result/AP_working/rel_20201222.uny',
+        ]
+    
+    def use(args):
+        args[0](args[1],args[2],args[3]) 
+
+    uny_args = []
+    for inf,outf in zip(in_files,out_files):
+        uny_args.append([struc.c2f_unary,inf,outf+'.it',True])
+        uny_args.append([struc.c2f_unary,inf,outf+'.noit',False])
+        # struc.c2f_unary(inf,outf+'.it',True)
+        # struc.c2f_unary(inf,outf+'.noit',False)
+
+    with multiprocessing.Pool(8) as pool:
+        pool.map(use,uny_args)
+
+    it_files=[
+        '/home/lwd/Result/AP_working/rel_20201201.uny.it',
+        '/home/lwd/Result/AP_working/rel_20201208.uny.it',
+        '/home/lwd/Result/AP_working/rel_20201215.uny.it',
+        '/home/lwd/Result/AP_working/rel_20201222.uny.it',
+        ]
+    noit_files=[
+        '/home/lwd/Result/AP_working/rel_20201201.uny.noit',
+        '/home/lwd/Result/AP_working/rel_20201208.uny.noit',
+        '/home/lwd/Result/AP_working/rel_20201215.uny.noit',
+        '/home/lwd/Result/AP_working/rel_20201222.uny.noit',
         ]
 
-    Struc.apollo_copy(irr_file,in_files)
-    Struc.AP_to_read('./stage1_res.txt','./stage1.rel')
-    quit()
+    struc.vote_ap(it_files,'/home/lwd/Result/vote/apv/uny_apv.rel.it')
+    struc.vote_ap(noit_files,'/home/lwd/Result/vote/apv/uny_apv.rel.noit')
+    
 
 if __name__=='__main__' and irr:
     print('start irr')
@@ -1741,9 +1815,11 @@ if __name__=='__main__' and irr:
     # adding ar apv
     for in_file, out_file in zip(in_files,out_files_ts):
         args.append([struc_no.infer_ar,ar_version,in_file, out_file])
+        pass
     # adding ap apv
     for in_file, out_file in zip(in_files,out_files_ap):
         args.append([struc_no.apollo_it,in_file, out_file])
+        pass
 
     tsls = os.listdir(tswd)
     in_files=[]
@@ -1755,7 +1831,7 @@ if __name__=='__main__' and irr:
             if res is not None:
                 tmp = res.group(1)
                 nn = join(tswd,name)
-                in_files.append([nn])
+                in_files.append(nn)
                 # adding ar tsv,bv
                 nn = join(tswd,f'rel_{tmp}_noirr.ar')
                 out_files_ts.append(nn)
@@ -1764,10 +1840,12 @@ if __name__=='__main__' and irr:
                 out_files_ap.append(nn)
 
     for in_file, out_file in zip(in_files,out_files_ts):
-        args.append([struc_no.apollo_it,ar_version,in_file, out_file])
+        args.append([struc_no.infer_ar,ar_version,in_file, out_file])
+        pass
 
     for in_file, out_file in zip(in_files,out_files_ap):
         args.append([struc_no.apollo_it,in_file, out_file])
+        pass
 
     def use_infer(args):
         if len(args)==3 :
@@ -1786,12 +1864,10 @@ if __name__=='__main__' and irr:
     
     with multiprocessing.Pool(pss) as pool:
             pool.map(use_infer, args)
-    pool.close()
-    pool.join()
 
     # ap2 tsv
     file_list=[f'/home/lwd/Result/TS_working/rel_wholemonth_vp{i}_noirr.ap2' for i in range(0,14)]
-    output_file='/home/lwd/Result/vote/tsv/ap2_tsv.rel'
+    output_file='/home/lwd/Result/vote/tsv/ap2_tsv_noirr.rel'
     struc_ap_tsv = Struc()
     struc_ap_tsv.read_irr(irr_file)
     struc_ap_tsv.topoFusion = TopoFusion(14,dir,'wholemonth')
@@ -1804,7 +1880,7 @@ if __name__=='__main__' and irr:
 
     # ar tsv
     file_list=[f'/home/lwd/Result/TS_working/rel_wholemonth_vp{i}_noirr.ar' for i in range(0,14)]
-    output_file='/home/lwd/Result/vote/tsv/ar_tsv.rel'
+    output_file='/home/lwd/Result/vote/tsv/ar_tsv_noirr.rel'
     struc_ar_tsv = Struc()
     struc_ar_tsv.read_irr(irr_file)
     struc_ar_tsv.topoFusion = TopoFusion(14,dir,'wholemonth')
@@ -1816,13 +1892,15 @@ if __name__=='__main__' and irr:
 
 
     # ap2 apv
+    struc = Struc()
+    struc.read_irr(no_file)
     _apfiles = [
         '/home/lwd/Result/AP_working/rel_20201201_noirr.ap2',
         '/home/lwd/Result/AP_working/rel_20201208_noirr.ap2',
         '/home/lwd/Result/AP_working/rel_20201215_noirr.ap2',
         '/home/lwd/Result/AP_working/rel_20201222_noirr.ap2',
     ]
-    outf = join(votd,'apv','ap2_apv.rel')
+    outf = join(votd,'apv','ap2_apv_noirr.rel')
     struc.vote_ap(_apfiles,outf)  
 
     # ar apv  
@@ -1832,7 +1910,7 @@ if __name__=='__main__' and irr:
         '/home/lwd/Result/AP_working/rel_20201215_noirr.ar',
         '/home/lwd/Result/AP_working/rel_20201222_noirr.ar',
     ]
-    outf = join(votd,'apv','ar_apv.rel')
+    outf = join(votd,'apv','ar_apv_noirr.rel')
     struc.vote_ap(_apfiles,outf) 
 
     tsfiles = os.listdir(tswd)
@@ -1840,7 +1918,7 @@ if __name__=='__main__' and irr:
     _tsfiles=dict()
     for n in tsfiles:
         if n.endswith('.ap2'):
-            res = re.match(r'^rel_([0-9]+)_noirr',n)
+            res = re.match(r'^rel_([0-9]+)_(.*)_noirr',n)
             today=None
             if res is not None:
                 date = res.group(1)
@@ -1848,7 +1926,10 @@ if __name__=='__main__' and irr:
                 today = _tsfiles.setdefault(date,[]).append(name)
             else:
                 continue
-            
+        
+
+    # print(_tsfiles)
+    # input()
     for date,files in _tsfiles.items():
         print(date)
         output_file=f'/home/lwd/Result/vote/tsv/ap2_bv_{date}_noirr.rel'
@@ -1862,7 +1943,7 @@ if __name__=='__main__' and irr:
     _tsfiles=dict()
     for n in tsfiles:
         if n.endswith('.ar'):
-            res = re.match(r'^rel_([0-9]+)_noirr',n)
+            res = re.match(r'^rel_([0-9]+)_(.*)_noirr',n)
             today=None
             if res is not None:
                 date = res.group(1)
@@ -1878,9 +1959,6 @@ if __name__=='__main__' and irr:
         struc_ar_bv.read_irr(irr_file)
         struc_ar_bv.topoFusion = TopoFusion(len(files),dir,date)
         struc_ar_bv.topoFusion.vote_among(files,output_file)
-    # pool.close()
-    print('main waiting for pool')
-    # pool.join()
     print('final vote')
     _apfiles = [
         '/home/lwd/Result/vote/tsv/ap2_bv_20201201_noirr.rel',
@@ -1896,8 +1974,6 @@ if __name__=='__main__' and irr:
         '/home/lwd/Result/vote/tsv/ar_bv_20201222_noirr.rel',]
     outf = join(votd,'apv','ar_bv_noirr.rel')
     struc.vote_ap(_apfiles,outf)   
-
-
 
 if __name__=='__main__' and run:
     print('start run')
@@ -2476,43 +2552,66 @@ if __name__=='__main__' and bngoo:
         pool.map(use_bn_go,mp_args)
 
 if __name__=='__main__' and nngoo:
-    tsfiles=[
-
-    '/home/lwd/Result/vote/apv/ap2_apv.rel',
-    '/home/lwd/Result/vote/apv/tsf.rel',
-
-    '/home/lwd/Result/vote/apv/ap2_bv.rel',
-    '/home/lwd/Result/vote/apv/tsf_apf.rel',
-
-    '/home/lwd/Result/vote/tsv/ap2_tsv_month.rel',
-    '/home/lwd/Result/vote/tsv/ar_tsv_month.rel',
+    print('starting nn go')
+    prepare=[
+        '/home/lwd/Result/vote/apv/ap2_apv.rel',
+        '/home/lwd/Result/vote/apv/ar_apv.rel',
+        '/home/lwd/Result/vote/apv/ap2_bv.rel',
+        '/home/lwd/Result/vote/apv/ar_bv.rel',
+        '/home/lwd/Result/vote/tsv/ap2_tsv.rel',
+        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
     ]
-    apfiles=[
+    NN_files=[
 
-    '/home/lwd/Result/AP_working/ap2_apv.feap.csv',
-    '/home/lwd/Result/AP_working/tsf.feap.csv',
+    '/home/lwd/Result/AP_working/ap2_apv.fea.csv',
+    '/home/lwd/Result/AP_working/ar_apv.fea.csv',
 
-    '/home/lwd/Result/AP_working/ap2_bv.feap.csv',
-    '/home/lwd/Result/AP_working/tsf_apf.feap.csv',
+    '/home/lwd/Result/AP_working/ap2_bv.fea.csv',
+    '/home/lwd/Result/AP_working/ar_bv.fea.csv',
 
-    '/home/lwd/Result/AP_working/ap2_tsv_month.feap.csv',
-    '/home/lwd/Result/AP_working/ar_tsv_month.feap.csv',
+    '/home/lwd/Result/AP_working/ap2_tsv.fea.csv',
+    '/home/lwd/Result/AP_working/ar_tsv.fea.csv',
     ]
-
-
-    rels = apfiles
+    struc = Struc()
+    struc.read_irr(irr_file)
     path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
-    for name in rels:
-        print(f'computing {name}')
-        p1 = time.time()
+    peeringdb_file='/home/lwd/Result/auxiliary/peeringdb.sqlite3'
+
+    def use_p(args):
+        if len(args)==5:
+            func=args[0]
+            path=args[1]
+            peer=args[2]
+            name=args[3]
+            outf=args[4]
+            func(path,peer,name,outf)
+        elif len(args)==3:
+            func=args[0]
+            inf = args[1]
+            outf=args[2]
+            func(inf,outf)
+
+    # prepare_args=[]
+    # for name in prepare:
+    #     print(f'prepare adding {name}')
+    #     tmp = name.strip().split('/')[-1]
+    #     outname = tmp.replace('.rel','.fea.csv')
+    #     outname = join('/home/lwd/Result/AP_working',outname)
+    #     prepare_args.append([struc.prepare_AP,path_file,peeringdb_file,name,outname])
+    #     # struc.prepare_AP(path_file,peeringdb_file,name,outname)
+    # with multiprocessing.Pool(6) as pool:
+        # pool.map(use_p,prepare_args)
+    NN_args=[]
+    for name in NN_files:
+        print(f'NN adding {name}')
         outname = name.strip().split('/')[-1]
         outname = outname+'.nn'
         outname = join('/home/lwd/Result/NN',outname)
-        checke(name)
-        NN_go(name,outname)
-        p2 = time.time()
-        print(f'done: {p2-p1}seconds')
-    quit()
+        NN_args.append([NN_go,name,outname])
+        # NN_go(name,outname)
+    with multiprocessing.Pool(6) as pool:
+        pool.map(use_p,NN_args)
+
 
 if __name__=='__main__' and main:
     quit()

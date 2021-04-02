@@ -686,6 +686,8 @@ class comm():
             if linka in tp_set or linkb in tp_set:
                 continue
             #note reverse
+            tp_set.add(linka)
+            tp_set.add(linkb)
             if '&' in rr:
                 check=set()
                 rrs = rr.split('&')
@@ -693,15 +695,11 @@ class comm():
                     if rev:
                         if int(rrr)==-int(rel):
                             hit +=1
-                            tp_set.add(linka)
-                            tp_set.add(linkb)
                             correct = True
                             break
                     else:
                         if int(rrr)==int(rel):
                             hit +=1
-                            tp_set.add(linka)
-                            tp_set.add(linkb)
                             correct = True
                             break
                 _sum = -1
@@ -725,15 +723,11 @@ class comm():
                     correl_mat[int(rel)+1][-int(rr)+1]+=1
                     if int(rr)==-int(rel):
                         hit +=1
-                        tp_set.add(linka)
-                        tp_set.add(linkb)
                         correct = True
                 else:
                     correl_mat[int(rel)+1][int(rr)+1]+=1
                     if int(rr)==int(rel):
                         hit +=1
-                        tp_set.add(linka)
-                        tp_set.add(linkb)
                         correct = True
             ti+=1
             linka = (str(linka[0]),str(linka[1]))
@@ -806,11 +800,11 @@ class comm():
         if self.hnc:
             result['hard']={}
             result['hard']['hit']=[hard_hit_total]+hard_hit
-            result['hard']['infer']=[hard_hit_total]+hard_infer
+            result['hard']['infer']=[hard_infer_total]+hard_infer
             result['hard']['validation']=[hard_hit_total]+[len(self.hard_links[idx]) for idx in range(4)]
             result['critical']={}
             result['critical']['hit']=[critical_hit_total]+critical_hit
-            result['critical']['infer']=[critical_hit_total]+critical_infer
+            result['critical']['infer']=[critical_infer_total]+critical_infer
             result['critical']['validation']=[critical_hit_total]+[len(self.critical_links[idx]) for idx in range(5)]
             print(f'hard link \
             \033[31mprecision {hard_hit_total/hard_infer_total:4f} \
@@ -881,10 +875,9 @@ class comm():
         else:
             out = open('./cmp.md','w')
             # put title
-            out.write('||total|p2c|p2p|c2p|hard|h1|h2|h3|h4|critical|c1|c2|c3|c4|c5|\n')
-            out.write('|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|\n')
-        line=f'''|{last_name} precision|{result['total']['hit']/safe(result['total']['infer']):5f}/{cnts['total']}|{result['p2c']['hit']/safe(result['p2c']['infer']):5f}/{cnts['p2c']}|{result['p2p']['hit']/safe(result['p2p']['infer']):5f}/{cnts['p2p']}|{result['c2p']['hit']/safe(result['c2p']['infer']):5f}/{cnts['c2p']}|{result['hard']['hit'][0]/safe(result['hard']['infer'][0]):5f}/{cnts['h total']}|{result['hard']['hit'][1]/safe(result['hard']['infer'][1]):5f}/{cnts['h type1']}|{result['hard']['hit'][2]/safe(result['hard']['infer'][2]):5f}/{cnts['h type2']}|{result['hard']['hit'][3]/safe(result['hard']['infer'][3]):5f}/{cnts['h type3']}|{result['hard']['hit'][4]/safe(result['hard']['infer'][4]):5f}/{cnts['h type4']}|{result['critical']['hit'][0]/safe(result['critical']['infer'][0]):5f}/{cnts['c total']}|{result['critical']['hit'][1]/safe(result['critical']['infer'][1]):5f}/{cnts['c type1']}|{result['critical']['hit'][2]/safe(result['critical']['infer'][2]):5f}/{cnts['c type2']}|{result['critical']['hit'][3]/safe(result['critical']['infer'][3]):5f}/{cnts['c type3']}|{result['critical']['hit'][4]/safe(result['critical']['infer'][4]):5f}/{cnts['c type4']}|{result['critical']['hit'][5]/safe(result['critical']['infer'][5]):5f}/{cnts['c type5']}|\n'''
-        
+            out.write('||total|p2c|p2p|hard|h1|h2|h3|h4|critical|c1|c2|c3|c4|c5|\n')
+            out.write('|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|\n')
+        line=f'''|{last_name} precision|{result['total']['hit']/safe(result['total']['infer']):5f}/{cnts['total']}|{(result['p2c']['hit']+result['c2p']['hit'])/safe(result['p2c']['infer']+result['c2p']['infer']):5f}/{cnts['p2c']}|{result['p2p']['hit']/safe(result['p2p']['infer']):5f}/{cnts['p2p']}|{result['hard']['hit'][0]/safe(result['hard']['infer'][0]):5f}/{cnts['h total']}|{result['hard']['hit'][1]/safe(result['hard']['infer'][1]):5f}/{cnts['h type1']}|{result['hard']['hit'][2]/safe(result['hard']['infer'][2]):5f}/{cnts['h type2']}|{result['hard']['hit'][3]/safe(result['hard']['infer'][3]):5f}/{cnts['h type3']}|{result['hard']['hit'][4]/safe(result['hard']['infer'][4]):5f}/{cnts['h type4']}|{result['critical']['hit'][0]/safe(result['critical']['infer'][0]):5f}/{cnts['c total']}|{result['critical']['hit'][1]/safe(result['critical']['infer'][1]):5f}/{cnts['c type1']}|{result['critical']['hit'][2]/safe(result['critical']['infer'][2]):5f}/{cnts['c type2']}|{result['critical']['hit'][3]/safe(result['critical']['infer'][3]):5f}/{cnts['c type3']}|{result['critical']['hit'][4]/safe(result['critical']['infer'][4]):5f}/{cnts['c type4']}|{result['critical']['hit'][5]/safe(result['critical']['infer'][5]):5f}/{cnts['c type5']}|\n'''
         # out.writelines(lines)
         out.write(line)
         out.close()
@@ -1127,7 +1120,22 @@ if __name__ == "__main__":
         '/home/lwd/Result/BN/ap2_tsv.rel.bn',
         '/home/lwd/Result/BN/ap2_bv.rel.bn',
 
-        '/home/lwd/Result/NN/ap2_apv_nn.rel',
+        '/home/lwd/Result/NN/ar_apv.fea.csv.nn',
+        '/home/lwd/Result/NN/ar_bv.fea.csv.nn',
+        '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
+        '/home/lwd/Result/NN/ap2_apv.fea.csv.nn',
+        '/home/lwd/Result/NN/ap2_tsv.fea.csv.nn',
+        '/home/lwd/Result/NN/ap2_bv.fea.csv.nn',
+    ]
+    
+    noirr=[
+        '/home/lwd/Result/vote/apv/ap2_apv_noirr.rel',
+        '/home/lwd/Result/vote/apv/ar_apv_noirr.rel',
+        '/home/lwd/Result/vote/apv/ap2_bv_noirr.rel',
+        '/home/lwd/Result/vote/apv/ar_bv_noirr.rel',
+        '/home/lwd/Result/vote/tsv/ap2_tsv_noirr.rel',
+        '/home/lwd/Result/vote/tsv/ar_tsv_noirr.rel',
+
     ]
 
     ss = {
@@ -1150,11 +1158,8 @@ if __name__ == "__main__":
     }
 
     tmp = {
-        '/home/lwd/Result/vote/apv/ap2_apv_irr.rel',
-        '/home/lwd/Result/vote/apv/ap2_apv_low.rel',
-        '/home/lwd/Result/vote/apv/ap2_apv_noirr.rel',
-        
-
+        '/home/lwd/Result/vote/apv/uny_apv.rel.it',
+        '/home/lwd/Result/vote/apv/uny_apv.rel.noit',
     }
 
     e = comm()
@@ -1169,7 +1174,9 @@ if __name__ == "__main__":
 
 
     test_file_list= []
-    for ff in tmp:
+
+    go = s1_list+ s2_list
+    for ff in go:
         last_name= ff.split('/')[-1]
         os.system(f'sort {ff}| uniq > /home/lwd/Result/cmp/{last_name}')
         test_file_list.append(f'/home/lwd/Result/cmp/{last_name}')
@@ -1180,7 +1187,7 @@ if __name__ == "__main__":
     # quit()
     for ff in test_file_list:
         if exists(ff):
-            e.total_statistic(ff)
+            e.total_statistic_rev(ff)
             try:
                 # e.compare(ff)
                 pass
