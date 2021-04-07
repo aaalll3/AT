@@ -219,6 +219,7 @@ class Extor:
         logging.debug(info)
         return proper_asn
 
+
 if __name__ == '__main__':
     # test_folder = os.path.abspath('./testfolder/ext')
     # logging.debug('test')

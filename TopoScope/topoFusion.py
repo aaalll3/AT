@@ -3,12 +3,36 @@ import numpy as np
 import os
 
 class TopoFusion(object):
-    def __init__(self, fileNum, dir_name,date):
+    def __init__(self, fileNum, dir_name,date, path_file=None):
         self.fileNum = fileNum
         self.dir = dir_name
         self.date = date
         self.prob = defaultdict(lambda: np.array([0.0, 0.0, 0.0]))
         self.linknum = defaultdict(int)
+
+        self.bg= False
+        self.bg_link=set()
+        if path_file:
+            self.background_link(path_file)
+
+    def background_link(self, path_file):
+        with open(path_file,'r') as f:
+            for line in f:
+                if line.startswith('#'):
+                    continue
+                
+                ASes = line.strip().split('|')
+                for i in range(len(ASes)-1):
+                    asn1 = int(ASes[i])
+                    asn2 = int(ASes[i+1])
+                    self.bg_link.add((asn1,asn2))
+                    self.bg_link.add((asn2,asn1))
+        f.close()
+        self.bg = True
+
+    def peek(self):
+        print(len(self.bg_link))
+
 
     def prob_among(self,file_list,output_file):
         for file in file_list:
@@ -53,7 +77,8 @@ class TopoFusion(object):
                     self.linknum[(asn1, asn2)] += 1
                     self.linknum[(asn2, asn1)] += 1
         self.writeProbf(output_file)
-        self.writeResultf(output_file,0.8, self.fileNum * 0.8, self.fileNum * 0.2)
+        #V6SET
+        self.writeResultf(output_file,0.8, self.fileNum * 0.7, self.fileNum * 0.2)
 
     def getTopoProb(self):
         for i in range(self.fileNum):
@@ -80,7 +105,7 @@ class TopoFusion(object):
                     self.linknum[(asn1, asn2)] += 1
                     self.linknum[(asn2, asn1)] += 1
         self.writeProb()
-        self.writeResult(0.8, self.fileNum * 0.8, self.fileNum * 0.2)
+        self.writeResult(0.8, self.fileNum * 0.8, self.fileNum * 0.4)
 
     def writeProbf(self,file_name):
         alllink = set()
@@ -123,6 +148,20 @@ class TopoFusion(object):
 
             alllink.add(link)
             alllink.add(reverse_link)
+        if self.bg:
+            for link in self.bg_link:
+                reverse_link = (link[1], link[0])
+                if link in alllink:
+                    continue
+                p2p = 0.0001
+                p2c = 0.0001
+                c2p = 0.0001
+                if link[0] < link[1]:
+                    fout.write(str(link[0]) + '|' + str(link[1]) + '|0|' + str(p2p) + '|' + str(p2c) + '|' + str(c2p) + '|' + str(1) + '\n')
+                else:
+                    fout.write(str(link[1]) + '|' + str(link[0]) + '|0|' + str(p2p) + '|' + str(c2p) + '|' + str(p2c) + '|' + str(1) + '\n')
+                alllink.add(link)
+                alllink.add(reverse_link)
         fout.close()
 
     def writeProb(self):

@@ -7,8 +7,10 @@ from os.path import join, abspath, exists
 def checke(path):
     if exists(path):
         print(f'ready:{path}')
+        return True
     else:
         print(f'not exists:{path}')
+        return False
 
 
 loc_raw_data_dir = abspath('/home/lwd/RIB.test/')
@@ -22,7 +24,12 @@ apvd = abspath('/home/lwd/Result/vote/apv')
 tsvd = abspath('/home/lwd/Result/vote/tsv')
 auxiliary = abspath('/home/lwd/Result/auxiliary')
 
+v6vpd = abspath('/home/lwd/Result/v6vp')
+v6vpg = abspath('/home/lwd/Result/vote/v6vpg')
+
 irr_file='/home/lwd/Result/auxiliary/irr.txt'
 
 s_dir='/home/lwd/RIB.test/path.test'  # source dir
 r_dir='/home/lwd/Result'              # Result dir
+
+vdir = "/home/lwd/Result/vote"

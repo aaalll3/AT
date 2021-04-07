@@ -2,9 +2,11 @@ from ctypes import alignment
 from logging import critical
 import os
 from os import path
-from run import NN_go 
+from run import BN_go
 import networkx as nx
 import json
+import re
+import pandas as pd
 
 
 from location import *
@@ -20,7 +22,7 @@ class comm():
     set up data for validation, comparing between different type of link
     only record one direction and check reverse link when use a link
     '''
-    def __init__(self):
+    def __init__(self,version=4):
         # basic
         self.ti = 0 
         self.tv = 0
@@ -36,9 +38,12 @@ class comm():
         self.critical_links=[set() for i in range(5)]
         self.link2VP=defaultdict(set)
         self.linkON=defaultdict(int) # observed number
-        self.tier1=['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
+        self.version=version
+        if version==4:
+            self.tier1=['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
             '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
-
+        else:
+            self.tier1= ['174', '1299', '3356', '6057', '6939', '9002', '24482', '35280', '37468', '39533']
         # relation type
         self.p2c = set()
         self.c2p = set()
@@ -64,13 +69,15 @@ class comm():
         # display digit
         self.dd = 3
 
+        self.output_lines = []
+
         # hierarchy for discrime tier
         boost_file = '/home/lwd/Result/auxiliary/validation_data.clean'
 
-        self.hierarchy = Hierarchy(boost_file)
+        self.hierarchy = Hierarchy(boost_file,version)
 
     @staticmethod
-    def fuck(valid_file):
+    def clear(valid_file):
         vf = open(valid_file)
         wf = open('/home/lwd/Result/auxiliary/validation_data.clean','w')
         for line in vf:
@@ -109,6 +116,7 @@ class comm():
             asn2 =int(asn2)
             self.valid[(asn1,asn2)]=rel
             if '&' in rel:
+                continue
                 check=set()
                 rrs = rel.split('&')
                 for rrr in rrs:
@@ -199,7 +207,7 @@ class comm():
         print('took type3')
         # set critical links
         # type0: links between tier1 ASes
-        tier1_num = len(self.hierarchy.clique)
+        tier1_num = len(self.tier1)
         tier1_list = list(self.tier1)
         for i in range(tier1_num):
             for j in range(i):
@@ -281,13 +289,13 @@ class comm():
         for i in range(5):
             print(f'{len(self.critical_links[i])} c type{i}')
         jsout={'htotal': list(self.hard_links_total),'htype':[ list(n) for n in self.hard_links],'ctotal':list(self.critical_links_total),'ctype': [ list(n) for n in self.critical_links]}
-        loc = '/home/lwd/Result/auxiliary/hnc.link'
+        loc = f'/home/lwd/Result/auxiliary/hncv{self.version}.link'
         of = open(loc,'w')
         json.dump(jsout,of)
         self.hnc=True
 
     def load_hnc(self):
-        loc = '/home/lwd/Result/auxiliary/hnc.link'
+        loc = f'/home/lwd/Result/auxiliary/hncv{self.version}.link'
         of = open(loc,'r')
         tmp = json.load(of)
         ll = tmp['htotal']
@@ -306,56 +314,7 @@ class comm():
         self.ti = 0 
         self.hit = 0
         self.cover = 0
-
-    def compare(self,rel_file):
-        print(f'\033[4mtest relationthip {rel_file}\033[0m')
-        ti = 0 # total infered
-        hit = 0 # same with validation set
-        cover = 0 # number of covered by validation set
-        rf = open(rel_file,'r')
-        for line in rf:
-            if line.startswith('#'):
-                continue
-            [asn1,asn2,rel]= line.split('|')
-            asn1 = int(asn1)
-            asn2 = int(asn2)
-            linka = (asn1,asn2)
-            linkb = (asn2,asn1)
-            rra = self.valid.get(linka,None)
-            rrb = self.valid.get(linkb,None)
-            rr = None
-            rev= False
-            if rra == None and rrb ==None:
-                continue
-            elif rra == None:
-                rr = rrb
-                rev=True
-            elif rrb == None:
-                rr = rra
-            else:
-                rr = rra
-            cover+=1
-            if '&' in rr:
-                rrs = rr.split('&')
-                for rrr in rrs:
-                    if rev:
-                        if int(rrr)==-int(rel):
-                            hit +=1
-                            break
-                    else:
-                        if int(rrr)==int(rel):
-                            hit +=1
-                            break
-            else:
-                if rev:
-                    if int(rr)==-int(rel):
-                        hit +=1
-                else:
-                    if int(rr)==int(rel):
-                        hit +=1
-            ti+=1
-        print(f'result: \033[31mhit {hit}\033[0m \033[35mtotal {ti}\033[0m \033[36mcover {cover}\033[0m \033[32mhit/infer/valid {hit}/{ti}/{self.tv}\033[0m\n\033[31mprecesion {hit/ti}\033[0m \033[35mrecall {hit/self.tv}\033[0m \033[36mcover rate {cover/self.tv}\033[0m')
-        rf.close()
+        self.output_lines = []
 
     def total_statistic(self,rel_file):
         print(f'\033[4mtest relationthip {rel_file}\033[0m')
@@ -625,6 +584,11 @@ class comm():
 
     def total_statistic_rev(self,rel_file):
         print(f'\033[4mtest relationthip {rel_file}\033[0m')
+        def safe(a):
+            if a == 0:
+                return 1
+            else:
+                return a
 
         # in this correlation matrix, the first dimension stands for infer type,
         # which belongs to p2c,p2p or c2p. the second dimension is for validation
@@ -715,17 +679,29 @@ class comm():
                 else:
                     continue
                 if rev:
-                    correl_mat[int(rel)+1][_other]+=1
+                    if int(rel) == 1:
+                        correl_mat[-int(rel)+1][_sum]+=1
+                    else:
+                        correl_mat[int(rel)+1][_other]+=1
                 else:
-                    correl_mat[int(rel)+1][_sum]+=1
+                    if int(rel) == 1:
+                        correl_mat[-int(rel)+1][_other]+=1
+                    else:
+                        correl_mat[int(rel)+1][_sum]+=1
             else:
                 if rev:
-                    correl_mat[int(rel)+1][-int(rr)+1]+=1
+                    if int(rel) == 1:
+                        correl_mat[-int(rel)+1][int(rr)+1]+=1
+                    else:
+                        correl_mat[int(rel)+1][-int(rr)+1]+=1
                     if int(rr)==-int(rel):
                         hit +=1
                         correct = True
                 else:
-                    correl_mat[int(rel)+1][int(rr)+1]+=1
+                    if int(rel) == 1:
+                        correl_mat[-int(rel)+1][-int(rr)+1]+=1
+                    else:
+                        correl_mat[int(rel)+1][int(rr)+1]+=1
                     if int(rr)==int(rel):
                         hit +=1
                         correct = True
@@ -796,7 +772,7 @@ class comm():
         result['total']['hit']=hit
         result['total']['infer']=ti
         result['total']['validation']=self.tv
-        print(f'result: \033[31mhit {hit:6} \033[35mtotal {ti:6} \033[36mcover {cover:6} \033[32mhit/infer/valid {hit:6}/{ti:6}/{self.tv:6}\n\033[31mprecesion {hit/ti:4f} \033[35mrecall {hit/self.tv:4f} \033[36mcover rate {cover/self.tv:4f}\033[0m')
+        print(f'result: \033[31mhit {hit:6} \033[35mtotal {ti:6} \033[36mcover {cover:6} \033[32mhit/infer/valid {hit:6}/{safe(ti):6}/{self.tv:6}\n\033[31mprecesion {hit/safe(ti):4f} \033[35mrecall {hit/safe(self.tv):4f} \033[36mcover rate {cover/safe(self.tv):4f}\033[0m')
         if self.hnc:
             result['hard']={}
             result['hard']['hit']=[hard_hit_total]+hard_hit
@@ -825,14 +801,9 @@ class comm():
                 \033[32mnum {critical_hit[idx]:6}/{critical_infer[idx]:6}/{len(self.critical_links[idx]):6} \
                 \033[33merror {1-critical_hit[idx]/critical_infer[idx]:4f}\033[0m')
         print('-'*40)
-        def safe(a):
-            if a == 0:
-                return 1
-            else:
-                return a
         numss=[self.np2c+self.hyn10,self.np2p+self.hy01+self.hyn10,self.nc2p+self.hy01]
-        for i in range(3):
-            print(f'p2c {correl_mat[i][i]/safe(sum(correl_mat[i]))} {correl_mat[i][i]}/{sum(correl_mat[i])}/{numss[i]}')
+        print(f'p2c {correl_mat[0][0]/safe(sum(correl_mat[0]))} {correl_mat[0][0]}/{sum(correl_mat[0])}/{numss[0]+numss[2]}')
+        print(f'p2c {correl_mat[1][1]/safe(sum(correl_mat[1]))} {correl_mat[1][1]}/{sum(correl_mat[1])}/{numss[1]}')
         name = ['p2c','p2p','c2p']
         vad = [self.np2c+self.hyn10, self.np2p+self.hy01+self.hyn10,self.nc2p+self.hy01]
         for i in range(3):
@@ -878,10 +849,66 @@ class comm():
             out.write('||total|p2c|p2p|hard|h1|h2|h3|h4|critical|c1|c2|c3|c4|c5|\n')
             out.write('|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|\n')
         line=f'''|{last_name} precision|{result['total']['hit']/safe(result['total']['infer']):5f}/{cnts['total']}|{(result['p2c']['hit']+result['c2p']['hit'])/safe(result['p2c']['infer']+result['c2p']['infer']):5f}/{cnts['p2c']}|{result['p2p']['hit']/safe(result['p2p']['infer']):5f}/{cnts['p2p']}|{result['hard']['hit'][0]/safe(result['hard']['infer'][0]):5f}/{cnts['h total']}|{result['hard']['hit'][1]/safe(result['hard']['infer'][1]):5f}/{cnts['h type1']}|{result['hard']['hit'][2]/safe(result['hard']['infer'][2]):5f}/{cnts['h type2']}|{result['hard']['hit'][3]/safe(result['hard']['infer'][3]):5f}/{cnts['h type3']}|{result['hard']['hit'][4]/safe(result['hard']['infer'][4]):5f}/{cnts['h type4']}|{result['critical']['hit'][0]/safe(result['critical']['infer'][0]):5f}/{cnts['c total']}|{result['critical']['hit'][1]/safe(result['critical']['infer'][1]):5f}/{cnts['c type1']}|{result['critical']['hit'][2]/safe(result['critical']['infer'][2]):5f}/{cnts['c type2']}|{result['critical']['hit'][3]/safe(result['critical']['infer'][3]):5f}/{cnts['c type3']}|{result['critical']['hit'][4]/safe(result['critical']['infer'][4]):5f}/{cnts['c type4']}|{result['critical']['hit'][5]/safe(result['critical']['infer'][5]):5f}/{cnts['c type5']}|\n'''
-        # out.writelines(lines)
-        out.write(line)
+        out.writelines(lines)
+        # out.write(line)
+        self.output_lines.append(line)
         out.close()
 
+    def newone(self):
+        def safe(a):
+            if a == 0:
+                return 1
+            else:
+                return a
+        ff = open('./cmp2.md','w')
+        ff.write('||total|p2c|p2p|hard|h1|h2|h3|h4|critical|c1|c2|c3|c4|c5|\n')
+        ff.write('|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|\n')
+        new_lines=[]
+        min_err = {}
+        max_err = {}
+        data_err=[]
+        data_num=[]
+        index_err = []
+        index_num =[]
+        columns=['total','p2c','p2p','hard','h1','h2','h3','h4','critical','c1','c2','c3','c4','c5']
+        for line in self.output_lines:
+            elem = line.split('|')
+            for idx in range(2,len(elem)-1):
+                min_err.setdefault(idx,10)
+                max_err.setdefault(idx,0)
+                pr = 1-float(elem[idx].split('/')[0])
+                if pr < min_err[idx] and pr != 0:
+                    min_err[idx] = pr
+                if pr > max_err[idx] and pr != 0:
+                    max_err[idx] = pr
+
+        def safe_d(a,b):
+            if b==0:
+                return 0
+            else:
+                return a/b
+        for line in self.output_lines:
+            elem = line.split('|')
+            line_err = [elem[1]+' err']
+            line_num = [elem[1]+' num']
+            for idx in range(2,len(elem)-1):
+                pr = 1-float(elem[idx].split('/')[0])
+                # pr = safe_d(max_err[idx],pr)
+                tot = elem[idx].split('/')[1]
+                line_err.append(f'{pr:.6f}')
+                line_num.append(f'{tot}')
+
+            new_lines.append('|'+'|'.join(line_err)+'|\n')
+            new_lines.append('|'+'|'.join(line_num)+'|\n')
+            index_err.append(line_err[0])
+            index_num.append(line_num[0])
+            data_err.append([ f'{nn:3.2f}' if type(nn) is float else f'{nn}' for nn in line_err[1:]])
+            data_num.append([ f'{nn:3.2f}' if type(nn) is float else f'{nn}' for nn in line_num[1:]])
+        
+            
+        ff.writelines(new_lines)
+        data = pd.DataFrame(data_err+data_num,index = index_err+index_num,columns=columns)
+        data.to_csv('./cmp.csv')
 
     def cmp2(self,valid_file,a,b):
         print(f'read validation set from {valid_file}')
@@ -1016,15 +1043,18 @@ class comm():
                 print(']')
             print('-'*30)
 
-fuck_u = False
+clean = False
 
-if __name__ == "__main__" and fuck_u:
-    comm.fuck('/home/lwd/RIB.test/validation/validation_data.txt')
+if __name__ == "__main__" and clean:
+    comm.clear('/home/lwd/RIB.test/validation/validation_data.txt')
     quit()
 
 if __name__ == "__main__":
+
+#list
     valid_file = '/home/lwd/RIB.test/validation/validation_data.txt'
     path_file = '/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
+    path6_file = '/home/lwd/RIB.test/path.test/pc202012.v6.u.path.clean'
     file_list=['/home/lwd/Result/vote/tsv/tsf_20201201.rel',
     '/home/lwd/Result/vote/tsv/tsf_20201208.rel',
     '/home/lwd/Result/vote/tsv/tsf_20201215.rel',
@@ -1086,60 +1116,46 @@ if __name__ == "__main__":
     ]
 
     un_list=[
-        '/home/lwd/Result/vote/apv/ap2_apv.rel',
-        # '/home/lwd/Result/vote/apv/ap2_sdv.rel',
-        '/home/lwd/Result/vote/apv/uny_apv.rel',
-        # '/home/lwd/Result/vote/apv/uny_sdv.rel',
+        '/home/lwd/Result/auxiliary/pc20201201.v4.arout',
+        '/home/lwd/Result/AP_working/rel_20201201.stg.1',
         '/home/lwd/Result/AP_working/rel_20201201.ap2',
-        '/home/lwd/AT/stage1.rel',
     ]
 
     s1_list=[
-        '/home/lwd/Result/vote/apv/ap2_apv.rel',
+        '/home/lwd/Result/auxiliary/rel_202012.ap2',
+        '/home/lwd/Result/auxiliary/pc202012.v4.arout',
+
+        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
         '/home/lwd/Result/vote/apv/ar_apv.rel',
-        '/home/lwd/Result/vote/apv/ap2_bv.rel',
         '/home/lwd/Result/vote/apv/ar_bv.rel',
         '/home/lwd/Result/vote/tsv/ap2_tsv.rel',
-        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
-
-        # '/home/lwd/Result/TS_working/rel_20201201_vp10.ar',
-        # '/home/lwd/Result/TS_working/rel_wholemonth_vp0.ar',
-        # '/home/lwd/Result/AP_working/rel_20201201.ap2',
-        # '/home/lwd/Result/auxiliary/pc20201201.v4.arout',
-        # '/home/lwd/Result/vote/tsv/ar_bv_20201201.rel',
-        # '/home/lwd/AT/stage1.rel'
-        # irr 
-        # '/home/lwd/Result/AP_working/test_low.ap2',
+        '/home/lwd/Result/vote/apv/ap2_apv.rel',
+        '/home/lwd/Result/vote/apv/ap2_bv.rel',
     ]
 
     s2_list=[
-        '/home/lwd/Result/BN/ar_apv.rel.bn',
         '/home/lwd/Result/BN/ar_tsv.rel.bn',
-        '/home/lwd/Result/BN/ar_bv.rel.bn',
-        '/home/lwd/Result/BN/ap2_apv.rel.bn',
+        # '/home/lwd/Result/BN/ar_apv.rel.bn',
+        # '/home/lwd/Result/BN/ar_bv.rel.bn',
+        '/home/lwd/Result/BN/stg.rel.bn',
         '/home/lwd/Result/BN/ap2_tsv.rel.bn',
-        '/home/lwd/Result/BN/ap2_bv.rel.bn',
+        # '/home/lwd/Result/BN/ap2_apv.rel.bn',
+        # '/home/lwd/Result/BN/ap2_bv.rel.bn',
 
-        '/home/lwd/Result/NN/ar_apv.fea.csv.nn',
-        '/home/lwd/Result/NN/ar_bv.fea.csv.nn',
-        '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
-        '/home/lwd/Result/NN/ap2_apv.fea.csv.nn',
-        '/home/lwd/Result/NN/ap2_tsv.fea.csv.nn',
-        '/home/lwd/Result/NN/ap2_bv.fea.csv.nn',
+        # '/home/lwd/Result/vote/tsv/ar_tsv.rel',
+        # '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
     ]
     
     noirr=[
-        '/home/lwd/Result/vote/apv/ap2_apv_noirr.rel',
-        '/home/lwd/Result/vote/apv/ar_apv_noirr.rel',
-        '/home/lwd/Result/vote/apv/ap2_bv_noirr.rel',
-        '/home/lwd/Result/vote/apv/ar_bv_noirr.rel',
-        '/home/lwd/Result/vote/tsv/ap2_tsv_noirr.rel',
+        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
         '/home/lwd/Result/vote/tsv/ar_tsv_noirr.rel',
+        '/home/lwd/Result/vote/tsv/ap2_tsv.rel',
+        '/home/lwd/Result/vote/tsv/ap2_tsv_noirr.rel',
 
     ]
 
-    ss = {
-        '/home/lwd/Result/vote/tsv/ap2_tsv.rel',
+    ar_check = [
+        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
         '/home/lwd/Result/TS_working/rel_wholemonth_vp0.ar',
         '/home/lwd/Result/TS_working/rel_wholemonth_vp1.ar',
         '/home/lwd/Result/TS_working/rel_wholemonth_vp2.ar',
@@ -1154,19 +1170,127 @@ if __name__ == "__main__":
         '/home/lwd/Result/TS_working/rel_wholemonth_vp11.ar',
         '/home/lwd/Result/TS_working/rel_wholemonth_vp12.ar',
         '/home/lwd/Result/TS_working/rel_wholemonth_vp13.ar',
-
-    }
-
-    tmp = {
+    ]
+    c2f_check = [
+        '/home/lwd/Result/vote/tsv/ap2_tsv.rel',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp0.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp1.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp2.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp3.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp4.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp5.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp6.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp7.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp8.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp9.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp10.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp11.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp12.ap2',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp13.ap2',
+    ]
+    stg_check = [
+        '/home/lwd/Result/vote/tsv/stg_tsv.rel',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp0.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp1.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp2.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp3.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp4.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp5.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp6.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp7.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp8.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp9.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp10.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp11.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp12.stg',
+        '/home/lwd/Result/TS_working/rel_wholemonth_vp13.stg',
+    ]
+    uny=[
         '/home/lwd/Result/vote/apv/uny_apv.rel.it',
         '/home/lwd/Result/vote/apv/uny_apv.rel.noit',
-    }
+        '/home/lwd/Result/vote/apv/ap2_apv.rel.it',
+        '/home/lwd/Result/vote/apv/ap2_apv.rel.noit',
+        '/home/lwd/Result/AP_working/rel_20201201.uny.it',
+        '/home/lwd/Result/AP_working/rel_20201201.uny.noit',
+    ]
 
-    e = comm()
+    tmp = [
+        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
+        '/home/lwd/Result/vote/tsv/stg.rel',
+        '/home/lwd/Result/vote/tsv/ap2_tsv.rel',
+
+    ]
+
+    v6 = [
+        # '/home/lwd/Result/auxiliary/pc20201201.v6.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c3.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c4.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c5.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c6.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c7.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c8.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c13.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c15.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c17.arout',
+        # '/home/lwd/Result/auxiliary/pc20201201.v6c20.arout',
+        # '/home/lwd/Result/BN/ap2_vpg_v6.rel.bn',
+        # '/home/lwd/Result/BN/ar_vpg_v6.rel.bn',
+        # '/home/lwd/Result/BN/stg.rel.bn',
+
+        # '/home/lwd/Result/BN/ap2_vpg_v6.rel.bn_0.5_10',
+        # '/home/lwd/Result/BN/ap2_vpg_v6.rel.bn2',
+        # '/home/lwd/Result/BN/ap2_vpg_v6.rel.bn_0.5_40',
+        # '/home/lwd/Result/BN/ap2_vpg_v6.rel.bn_0.6_25',
+
+        # '/home/lwd/Result/BN/ar_vpg_v6.rel.bn2',
+        # '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.4_25',
+
+        # '/home/lwd/Result/BN/stg.rel.bn_0.5_10',
+        # '/home/lwd/Result/BN/stg.rel.bn2',
+        # '/home/lwd/Result/BN/stg.rel.bn_0.5_40',
+        # '/home/lwd/Result/BN/stg.rel.bn_0.4_25',
+        # '/home/lwd/Result/BN/stg.rel.bn_0.6_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_5',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_10',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_15',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_20',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_30',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_35',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_40',
+
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.1_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.2_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.3_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.4_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.5_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.6_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.7_25',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.8_25',
+
+
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad52',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad62',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad72',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad82',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad83',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad84',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_ad85',
+
+        '/home/lwd/Result/BN/ar_vpg_v6.rel_ad72.bn_0.5_30',
+        
+        '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.7_30',
+    ]
+    seed = [
+        '/home/lwd/Result/auxiliary/pc20201201.v6.arout',
+        '/home/lwd/Result/BN/ar_vpg_v6.rel_ad72.bn_0.5_30',
+    ]
+#usage
+    e = comm(6)
     e.read(valid_file)
     # e.set_hnc_link(path_file)
     # quit()
-    if os.path.exists('/home/lwd/Result/auxiliary/hnc.link'):
+    if os.path.exists(f'/home/lwd/Result/auxiliary/hncv{e.version}.link'):
         e.load_hnc()
     else:
         e.set_hnc_link(path_file)
@@ -1175,11 +1299,16 @@ if __name__ == "__main__":
 
     test_file_list= []
 
-    go = s1_list+ s2_list
+
+    # go = noirr[0:2]
+    # go = noirr[-2:]
+    # go = tmp
+    # go = s1_list
+    go = v6
     for ff in go:
         last_name= ff.split('/')[-1]
-        os.system(f'sort {ff}| uniq > /home/lwd/Result/cmp/{last_name}')
         test_file_list.append(f'/home/lwd/Result/cmp/{last_name}')
+        os.system(f'sort {ff}| uniq > /home/lwd/Result/cmp/{last_name}')
     # quit()
 
     os.system('rm ./cmp.md')
@@ -1196,7 +1325,7 @@ if __name__ == "__main__":
         else:
             print(f'\033[7mnot exists: {ff}\033[0m')
 
+    e.newone()
 
-
-    # e.cmp2(valid_file,test_file_list[-2],test_file_list[-1])
-    # e.cmp2(valid_file,test_file_list[-2],test_file_list[-3])
+    # e.cmp2(valid_file,test_file_list[-7],test_file_list[-1])
+    # e.cmp2(valid_file,test_file_list[0],test_file_list[1])

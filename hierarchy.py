@@ -3,7 +3,7 @@ from collections import defaultdict
 import networkx as nx
 
 class Hierarchy(object):
-    def __init__(self, name):
+    def __init__(self, name,version=4):
         self.name = name
         self.clique = set()
         self.high = set()
@@ -14,6 +14,13 @@ class Hierarchy(object):
         self.provider = defaultdict(set)
         self.customer = defaultdict(set)
         self.peer = defaultdict(set)
+
+        self.tier_1_v6 = ['174', '1299', '3356', '6057', '6939', '9002', '24482', '35280', '37468', '39533']
+        self.clique_v6 = set(['174', '1299', '3356', '6057', '6939', '9002', '24482', '35280', '37468', '39533'])
+        if version==4:
+            self.clique = set(['174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956'])
+        else:
+            self.clique=self.clique_v6
 
         self.get_rel()
         self.cal_hierarchy()

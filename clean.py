@@ -35,6 +35,8 @@ def clean(path):
             out_path.write('\n')
 
 
+
+
 ixp = set()
 def readIXP(peeringdb_file) -> bool:
     if peeringdb_file.endswith('json'):
