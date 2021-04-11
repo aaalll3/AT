@@ -2,7 +2,7 @@ import time
 import re
 
 
-def strcit(self, irr_file, path_file, output_file, it = 5):
+def strcit( irr_file, path_file, output_file, it = 5):
     """
     strict core to leaf followed by iterations
     path_file: location of path file
@@ -44,11 +44,11 @@ def strcit(self, irr_file, path_file, output_file, it = 5):
                     if rel != -1:
                         link_rel_ap[(ASes[i],ASes[i+1])] = 4
                     continue
-                if(ASes[i],ASes[i+1]) in self.irr_c2p:
+                if(ASes[i],ASes[i+1]) in irr_c2p:
                     link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
-                if(ASes[i+1],ASes[i]) in self.irr_c2p:
+                if(ASes[i+1],ASes[i]) in irr_c2p:
                     link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-                if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
+                if(ASes[i],ASes[i+1]) in irr_p2p or (ASes[i+1],ASes[i]) in irr_p2p:
                     link_rel_ap.setdefault((ASes[i],ASes[i+1]),0)
                 if ASes[i] in thetier_1:
                     if prime_t1 == i-1:

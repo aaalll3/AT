@@ -1,7 +1,7 @@
 import re
 
 
-def strong(self,irr_file, infile,outfile,K=1):
+def strong(irr_file, infile,outfile,K=1):
     '''
     strong rule
     path_file: location of path file
@@ -35,11 +35,11 @@ def strong(self,irr_file, infile,outfile,K=1):
                 continue
             ASes = line.strip().split('|')
             for i in range(len(ASes)-1):
-                if (ASes[i],ASes[i+1]) in self.irr_c2p:
+                if (ASes[i],ASes[i+1]) in irr_c2p:
                     link2rel[(ASes[i],ASes[i+1])]=1
-                if (ASes[i+1],ASes[i]) in self.irr_c2p:
+                if (ASes[i+1],ASes[i]) in irr_c2p:
                     link2rel[(ASes[i],ASes[i+1])]=-1
-                if (ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
+                if (ASes[i],ASes[i+1]) in irr_p2p or (ASes[i+1],ASes[i]) in irr_p2p:
                     link2rel[(ASes[i],ASes[i+1])]=0
                 if ASes[i] in thetier_1 and ASes[i+1] in thetier_1:
                     link2rel[(ASes[i],ASes[i+1])]=0
