@@ -22,14 +22,13 @@ from collections import defaultdict
 from collections import Counter
 from os.path import abspath, join, exists
 from networkx.algorithms.centrality import group
-from TopoScope.topoFusion import TopoFusion
 from logging import warn,debug,info
 from sklearn import preprocessing
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import NearestNeighbors
 from sklearn.model_selection import train_test_split
 
-from rib_to_read import read, url_form, download_rib, worker, unzip_rib
+from TopoScope.topoFusion import TopoFusion
 from location import *
 from hierarchy import Hierarchy
 
@@ -42,7 +41,6 @@ from hierarchy import Hierarchy
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 log_location = abspath(join('./log',f'log_{time.time()}'))
-# log_location =''
 logging.basicConfig(filename=log_location,level=logging.INFO)
 
 
@@ -74,8 +72,6 @@ logging.basicConfig(filename=log_location,level=logging.INFO)
 class Struc():
     def __init__(self,path_file=None,boost_file=None,irr_file=None) -> None:
         # base structure of graph
-        debug('[Struc.init]initializing',stack_info=True)
-
         self.whole_size=0
         self.clique = set(['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
             '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956'])
@@ -117,12 +113,9 @@ class Struc():
         self.irr_file=irr_file
 
 
-        info('[Struc.init]loading informations')
 
     #boost file
     def get_relation(self, boost_file):
-        debug('[Struc.get_relation]',stack_info=True)
-        info('[Struc.get_relation]TS: load initial infer for hierarchy')
         with open(boost_file,'r') as file:
             for line in file:
                 if not line.startswith('#'):
@@ -136,7 +129,6 @@ class Struc():
                         self.peer[asn1].add(asn2)
                         self.peer[asn2].add(asn1)
 
-    #
     def cal_hierarchy(self,version=4):
         allNodes = set()
         theclique=None
@@ -240,87 +232,6 @@ class Struc():
         if idx == -1:
             self.non_tier_1.append(ASes)
 
-    # AP c2l out/w out
-    def write_AP(self, AP_stage1_file,wp_file):
-        debug('[Struc.write_AP]',stack_info=True)
-        info('[Struc.write_AP]AP: iteration and output c2f result')
-        for it in range(5):
-            for asn in self.non_tier_1:
-                idx_11 = 0
-                idx_1 = 0
-                idx_0 = 0
-                for i in range(len(asn)-1):
-                    if (asn[i],asn[i+1]) in self.link_relation.keys() \
-                        and list(self.link_relation[(asn[i],asn[i+1])]) == [-1]:
-                        idx_11 = i
-                    if (asn[i],asn[i+1]) in self.link_relation.keys() \
-                        and list(self.link_relation[(asn[i],asn[i+1])]) == [0]:
-                        idx_0 = i
-                    if (asn[i],asn[i+1]) in self.link_relation.keys() \
-                        and list(self.link_relation[(asn[i],asn[i+1])]) == [1]:
-                        idx_1 = i
-                if idx_11 !=0:
-                    for i in range(idx_1+1,len(asn)-1):
-                        self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
-                if idx_1 !=0:
-                    for i in range(idx_0-1):
-                        self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
-                if idx_0 !=0:
-                    if idx_0>=2:
-                        for i in range(idx_0-1):
-                            self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(1)
-                    if idx_0<=len(asn)-2:
-                        for i in range(idx_0+1,len(asn)-1):
-                            self.link_relation.setdefault((asn[i],asn[i+1]),set()).add(-1)
-        
-            p2c_cnt = 0
-            c2p_cnt = 0
-            p2p_cnt = 0
-            dulp = 0
-            for k,v in self.link_relation.items():
-                if len(v)>=2:
-                    dulp +=1
-                    continue
-                if 1 in v:
-                    c2p_cnt +=1
-                if 0 in v:
-                    p2p_cnt +=1
-                if -1 in v:
-                    p2c_cnt +=1
-            print(p2c_cnt)
-            print(c2p_cnt)
-            print(p2p_cnt)
-            print(dulp)
-        result = dict()
-        conflict = 0
-        for k,v in self.link_relation.items():
-            if len(v)>1 and 0 in v:
-                result[k] = 0
-            elif len(v) == 1:
-                result[k] = list(v)[0]
-            else:
-                conflict +=1
-        print('conflict: ' + str(conflict))
-        #TODO
-        #dst
-        print('saving')
-        # wp_file = join(AP_stage1_file,'wrong')
-        f = open(AP_stage1_file,'w')
-        f.write(str(result))
-        f.close()
-        f = open(wp_file,'w')
-        f.write(str(self.wrong_path))
-        f.close()
-
-    def apollo(self,path_file,AP_stage1_file,wp_file):
-        debug('[Struc.apollo]',stack_info=True)
-        info('[Struc.apollo]run c2f for AP')
-        with open(path_file) as f:
-            for line in f:
-                ASes = line.strip().split('|')
-                self.process_line_AP(ASes) # Apollo
-        self.write_AP(AP_stage1_file,wp_file)  # part1 over for Apollo
-
     def core2leaf(self, path_files, output_file,version=4):
         """
         A easy core to leaf infer with irr
@@ -371,17 +282,6 @@ class Struc():
                 wf.write(line)
         wf.close()
 
-    #6125
-    # notes for c2l+apollo vote
-    # two of method is used, "Struc.apollo_it" and "Struc.vote_ap"
-    # in parts "simple", firstly, runs the "apollo_it"
-    # then, in parts "vote", runs the "vote_ap"
-    # validation is made in file "./compare.py"
-    #
-    # used to give basic infer
-    # first run the core2leaf for paths which contain the tier1 AS
-    # then go through rest path for 5 times (following apollo) \
-    # to infer paths that contain already infered link
     def apollo_it(self, path_files, output_file, it = 5,version=4):
         """
         core to leaf followed by iterations
@@ -478,7 +378,6 @@ class Struc():
         print(f'iteration takes {p3-p2}s')
         print(f'ap_it takes {p3-p1}s')
 
-    # static methods for comparing
     @staticmethod
     def apollo_copy(irr_file, filelist):
             # irr
@@ -706,8 +605,6 @@ class Struc():
                     continue
                 of.write(f'{link[0]}|{link[1]}|{rel}\n')
 
-
-
     def c2f_unary(self,infile, outfile,it):
         tier1s = [ '174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
         untouched = []
@@ -788,27 +685,6 @@ class Struc():
                     continue
                 of.write(f'{link[0]}|{link[1]}|{rel}\n')
 
-    def clear(self,path,out):
-        f = open(path,'r')
-        links = []
-        link = None
-        for line in f:
-            line = line.strip()
-            parts = line.split('|')
-            if len(parts)<3:
-                if link is None:
-                    link = [parts[0],parts[1]]
-                else:
-                    link.append(parts[1])
-                    links.append(link)
-                    link = None
-            else:
-                links.append(parts)
-        f.close()
-        o = open(out,'w')
-        for link in links:
-            o.write('|'.join(link)+'\n')
-
     # irr_file checked
     def read_irr(self,irr_path):
         debug('[Struc.read_irr]',stack_info=True)
@@ -836,14 +712,11 @@ class Struc():
         os.system(command)
         return dst
 
-    def clean_TS(self,dir):
+    def clean_vp(self,dir):
         os.system(f'rm {dir}/*')
 
     # TS divided file
-    def divide_TS(self,group_size,dir,date):
-        debug('[Struc.divide_TS]',stack_info=True)
-        info(f'[Struc.divide_TS]divide VP into {group_size} groups for voting')
-        group_cnt = 0
+    def divide_VP(self,group_size,dir,date):
         pre_VP = list(self.pre_VP)
         sec_VP = list(self.sec_VP)
         partial_VP = list(self.partialVP)
@@ -874,25 +747,20 @@ class Struc():
                 for path in self.VP2path[VP]:
                     wf.write(path + '\n')
             wf.close()
-    
-    #FULL
-    def infer_TS(self,dir,ar_version,date):
-        debug('[Struc.infer_TS]',stack_info=True)
-        info('[Struc.infer_TS]run asrank for seperated group')
-        for i in range(len(self.VPGroup)):
-            src_name = abspath(join(dir,f'path_{date}_vp{i}.path'))
-            dst_name = abspath(join(dir,f'rel_{date}_vp{i}.ar'))
-            command = f"perl {ar_version} {src_name} > {dst_name}"
-            os.system(command)
 
     def infer_ar(self,ar_version,inf,outf):
         command = f"perl {ar_version} {inf} > {outf}"
-        os.system(command)
+        os.system(command)   
+
+    def vote_simple_vp(self,file_num,dir,in_files,out_files):
+        self.topoFusion = TopoFusion(file_num,dir,'no')
+        self.topoFusion.vote_among(in_files,out_files)
 
     # path_file, peeringdb file, AP vote out
     def prepare_AP(self,path_file,peeringdb_file,ap_res_file,output_file):
-        debug('[Struc.infer_AP]',stack_info=True)
-        info('[Struc.infer_AP]infer AP')
+        '''
+        prepare knn features
+        '''
         print(f'prepare for {ap_res_file}')
         start = time.time()
         #TODO
@@ -1112,113 +980,6 @@ class Struc():
         link_fea.to_csv(output_file,index=False)
         end  = time.time() 
         print(f'done: {end-p4}s,{end-start}s')
-    
-    def vote_TS(self,dir,date):
-        debug('[Struc.vote_TS]',stack_info=True)
-        info('[Struc.vote_TS]')
-        # vote
-        if self.file_num == None:
-            self.topoFusion = TopoFusion(self.file_num,dir,date)
-        else:
-            file_num=0
-            names = os.listdir(tswd)
-            for name in names:
-                if 'path_' in name:
-                    file_num+=1
-            self.topoFusion = TopoFusion(file_num,dir,date)
-        self.topoFusion.getTopoProb()
-
-    def vote_simple_ts(self,dir,date,file_list,output_file):
-        debug('[Struc.vote_TS]',stack_info=True)
-        info('[Struc.vote_TS]')
-        self.topoFusion = TopoFusion(10,dir,date)
-        self.topoFusion.vote_among(file_list,output_file)
-
-    #6125
-    # the method is used for vote among files in varible "file_list"
-    # following method in Apollo/Stage_1.py
-    # most parts are copied from apollo and basiclly just the same
-    def vote_ap(self,file_list,filename):
-        """
-        vote from all files
-        file_list: containing all files that give their votes
-        filename: where the result puts
-        """
-        links=dict()
-        for file in file_list:
-            with open(file,'r') as ff:
-                for line in ff:
-                    if line.startswith('#'):
-                        continue
-                    line=line.strip().split('|')
-                    asn1=line[0]
-                    asn2=line[1]
-                    rel = line[2]
-                    links.setdefault((asn1,asn2),set()).add(rel)
-        result=dict()
-        for link,rel in links.items():
-            if len(rel)>1 and 0 in rel:
-                result[link] = 0
-            elif len(rel) == 1:
-                result[link] = list(rel)[0]
-
-        w = open(filename,'w')
-        for link,rel in result.items():
-            w.write(f'{link[0]}|{link[1]}|{rel}\n')
-
-    @staticmethod
-    def vote_date_strict(file_list,filename):
-        read_links={}
-        for file in file_list:
-            with open(file,'r') as ff:
-                for line in ff:
-                    if line.startswith('#'):
-                        continue
-                    asn1,asn2,rel = line.strip().split('|')
-                    asn1 = int(asn1)
-                    asn2 = int(asn2)
-                    rel = int(rel)
-                    arel = read_links.get((asn1,asn2))
-                    brel = read_links.get((asn2,asn1))
-                    if arel:
-                        if arel!=rel:
-                            read_links.pop((asn1,asn2),None)
-                            continue
-                    elif brel:
-                        if brel!=rel:
-                            read_links.pop((asn2,asn1),None)
-                            continue
-                    else:
-                        read_links[(asn1,asn2)]=rel
-        with open(filename,'w') as outputf:
-            for link,rel in read_links.items():
-                outputf.write(f'{link[0]}|{link[1]}|{rel}\n')
-
-    @staticmethod
-    def AP_to_read(read_from,wrtie_to):
-        w = open(wrtie_to,'w')
-        with open(read_from,'r') as f:
-            res = eval(f.read())
-            for link,rel in res.items():
-                w.write(f'{link[0]}|{link[1]}|{rel}\n')
-
-    @staticmethod
-    def cross_ts(dir,ar_version,files):
-        for file in files:
-            dst_name = 'cross_'+file +'.ar'
-            src_name = join(dir,file)
-            dst_name = join(dir,dst_name)
-            command = f"perl {ar_version} {src_name} > {dst_name}"
-            os.system(command)
-
-    def cross_ap(self,dir,files):
-        for file in files:
-            path_file = join(dir,file)
-            AP_stage1_file = join(dir,'cross_'+file +'.st1')
-            wp_file = join(dir,'cross_'+file +'.wrn')
-            self.apollo(path_file,AP_stage1_file,wp_file)
-            Struc.AP_to_read(AP_stage1_file,AP_stage1_file.replace('st1','apr'))
-
 
 
 class Links(object):
@@ -1494,292 +1255,263 @@ class Links(object):
         self.assignIXPFacility()
         self.assignAdjanceTypeRatio()
 
-def output(final_prob, link,output_path):
-    link_infer = list(link.edge_infer)
-    link_finish = list(link.edge_finish)
-    link_all = link_finish + link_infer
-    
-    outputRel = open(output_path, 'w')
-    inferredLink = set()
-    tier1s = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '4436', '5511', '6453', '6461', '6762', '7018', '12956', '3549']
 
-    for edge in link_finish:
-        final_prob[edge] = link.prob[edge]
-    
-    for edge in link_all:
-        AS1, AS2 = edge
-        if AS1 in tier1s and AS2 in tier1s:
-            outputRel.write('|'.join((str(AS1), str(AS2), '0')) + '\n')
-            continue
-        reverseEdge = (AS2, AS1)
+class Stage2():
+    def __init__(self):
+        self.params = {
+            'boosting_type': 'gbdt',  
+            'objective': 'multiclass',  
+            'num_class': 3,  
+            'metric': 'multi_error',  
+            'num_leaves': 300,  
+            'min_data_in_leaf': 500,  
+            'learning_rate': 0.01,  
+            'feature_fraction': 0.8,  
+            'bagging_fraction': 0.8,  
+            'bagging_freq': 5,  
+            'lambda_l1': 0.4,  
+            'lambda_l2': 0.5,  
+            'min_gain_to_split': 0.2,  
+            'verbose': -1,
+            'num_threads':4
+            }
+            
 
-        if edge in inferredLink:
-            continue
-        if edge in link.siblings:
-            outputRel.write('|'.join((str(AS1), str(AS2), '1')) + '\n')
+    def output(self,final_prob, link,output_path):
+        link_infer = list(link.edge_infer)
+        link_finish = list(link.edge_finish)
+        link_all = link_finish + link_infer
+
+        outputRel = open(output_path, 'w')
+        inferredLink = set()
+        tier1s = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', '3257', '3320', '3356', '4436', '5511', '6453', '6461', '6762', '7018', '12956', '3549']
+
+        for edge in link_finish:
+            final_prob[edge] = link.prob[edge]
+
+        for edge in link_all:
+            AS1, AS2 = edge
+            if AS1 in tier1s and AS2 in tier1s:
+                outputRel.write('|'.join((str(AS1), str(AS2), '0')) + '\n')
+                continue
+            reverseEdge = (AS2, AS1)
+
+            if edge in inferredLink:
+                continue
+            if edge in link.siblings:
+                outputRel.write('|'.join((str(AS1), str(AS2), '1')) + '\n')
+                inferredLink.add(edge)
+                inferredLink.add(reverseEdge)
+                continue
             inferredLink.add(edge)
             inferredLink.add(reverseEdge)
-            continue
-        inferredLink.add(edge)
-        inferredLink.add(reverseEdge)
-        p2p, p2c, c2p = final_prob[edge]
-        if p2p > p2c and p2p > c2p:
-            if AS1 < AS2:
-                outputRel.write('|'.join((str(AS1), str(AS2), '0')) + '\n')
-            else:
-                outputRel.write('|'.join((str(AS2), str(AS1), '0')) + '\n')
-        elif p2c > p2p and p2c > c2p:
-            outputRel.write('|'.join((str(AS1), str(AS2), '-1')) + '\n')
-        elif c2p > p2p and c2p > p2c:
-            outputRel.write('|'.join((str(AS2), str(AS1), '-1')) + '\n')
+            p2p, p2c, c2p = final_prob[edge]
+            if p2p > p2c and p2p > c2p:
+                if AS1 < AS2:
+                    outputRel.write('|'.join((str(AS1), str(AS2), '0')) + '\n')
+                else:
+                    outputRel.write('|'.join((str(AS2), str(AS1), '0')) + '\n')
+            elif p2c > p2p and p2c > c2p:
+                outputRel.write('|'.join((str(AS1), str(AS2), '-1')) + '\n')
+            elif c2p > p2p and c2p > p2c:
+                outputRel.write('|'.join((str(AS2), str(AS1), '-1')) + '\n')
 
-def BayesNetwork(link,output_file):
-    link_infer = list(link.edge_infer)
-    link_finish = list(link.edge_finish)
-    link_all = link_finish + link_infer
+    def BayesNetwork(self,link,output_file):
+        link_infer = list(link.edge_infer)
+        link_finish = list(link.edge_finish)
+        link_all = link_finish + link_infer
 
-    link_feature = [link.vp, link.nonpath, link.ixp, link.facility, link.degreeRatio, link.distance2Clique, link.tripletRel, link.adjanceTypeRatio, link.vppos]
-    link_feature_order = [list() for _ in range(len(link_all))]
-    
-    for i in range(len(link_feature)):
-        f_c = 0
-        feature_dict = dict()
-        for j in range(len(link_all)):
-            if isinstance(link_feature[i][link_all[j]], int):
-                f = tuple([link_feature[i][link_all[j]]])
-            else:
-                f = tuple(link_feature[i][link_all[j]])
-            if f not in feature_dict:
-                feature_dict[f] = f_c
-                f_c += 1
-            link_feature_order[j].append(feature_dict[f])
-    link_feature_order = np.array(link_feature_order)
+        link_feature = [link.vp, link.nonpath, link.ixp, link.facility, link.degreeRatio, link.distance2Clique, link.tripletRel, link.adjanceTypeRatio, link.vppos]
+        link_feature_order = [list() for _ in range(len(link_all))]
 
-    parent = {1:[0, 8], 6:[7], 5:[6, 7]}
-    final_prob = dict()
-    for edge in link_all:
-        final_prob[edge] = list(map(lambda x: math.log10(x), link.init_prob[edge]))
+        for i in range(len(link_feature)):
+            f_c = 0
+            feature_dict = dict()
+            for j in range(len(link_all)):
+                if isinstance(link_feature[i][link_all[j]], int):
+                    f = tuple([link_feature[i][link_all[j]]])
+                else:
+                    f = tuple(link_feature[i][link_all[j]])
+                if f not in feature_dict:
+                    feature_dict[f] = f_c
+                    f_c += 1
+                link_feature_order[j].append(feature_dict[f])
+        link_feature_order = np.array(link_feature_order)
 
-    for i in range(len(link_feature)):
-        prob = defaultdict(lambda: [0.0, 0.0, 0.0])
-        count_class = defaultdict(lambda: [0.0, 0.0, 0.0])
-        for j in range(len(link_all)):
-            x = link_feature_order[j][i]
-            y = []
-            if i in parent:
-                for pa in parent[i]:
-                    y.append(link_feature_order[j][pa])
-            y = tuple(y)
-            temp_prob = link.init_prob[link_all[j]]
-            prob[(x, y)] = tuple([a + b for a, b in zip(prob[(x, y)], temp_prob)])
-            count_class[y] = tuple([a + b for a, b in zip(count_class[y], temp_prob)])
-        f_prob = dict()
-        for key in prob:
-            (x, y) = key
-            f_prob[x] = tuple([(a + 1) / (b + len(prob)) for a, b in zip(prob[(x, y)], count_class[y])])
-        for j in range(len(link_all)):
-            edge = link_all[j]
-            x = link_feature_order[j][i]
-            temp_prob = (f_prob[x][0] + 1e-10, f_prob[x][1] + 1e-10, f_prob[x][2] + 1e-10)
-            final_prob[edge] = tuple(map(lambda x, y: x + y, final_prob[edge], tuple(map(lambda x: math.log10(x), temp_prob))))
-    output(final_prob, link,output_file)
+        parent = {1:[0, 8], 6:[7], 5:[6, 7]}
+        final_prob = dict()
+        for edge in link_all:
+            final_prob[edge] = list(map(lambda x: math.log10(x), link.init_prob[edge]))
 
-def BN_go(org_name,peering_name,rel_file,prob_file,path_file,output_file,version=4):
-    link = Links(org_name, peering_name,rel_file,prob_file,path_file,version)
-    link.constructAttributes()
-    BayesNetwork(link,output_file)
+        for i in range(len(link_feature)):
+            prob = defaultdict(lambda: [0.0, 0.0, 0.0])
+            count_class = defaultdict(lambda: [0.0, 0.0, 0.0])
+            for j in range(len(link_all)):
+                x = link_feature_order[j][i]
+                y = []
+                if i in parent:
+                    for pa in parent[i]:
+                        y.append(link_feature_order[j][pa])
+                y = tuple(y)
+                temp_prob = link.init_prob[link_all[j]]
+                prob[(x, y)] = tuple([a + b for a, b in zip(prob[(x, y)], temp_prob)])
+                count_class[y] = tuple([a + b for a, b in zip(count_class[y], temp_prob)])
+            f_prob = dict()
+            for key in prob:
+                (x, y) = key
+                f_prob[x] = tuple([(a + 1) / (b + len(prob)) for a, b in zip(prob[(x, y)], count_class[y])])
+            for j in range(len(link_all)):
+                edge = link_all[j]
+                x = link_feature_order[j][i]
+                temp_prob = (f_prob[x][0] + 1e-10, f_prob[x][1] + 1e-10, f_prob[x][2] + 1e-10)
+                final_prob[edge] = tuple(map(lambda x, y: x + y, final_prob[edge], tuple(map(lambda x: math.log10(x), temp_prob))))
+        self.output(final_prob, link,output_file)
 
-def GetCred(y_fraud_train,K,ind):
-    y_fraud_train = np.array(y_fraud_train)
-    N = ind.shape[0]
-    Cred = [[0,0,0] for i in range(N)]
-    for i in range(N):
-        cnt0 = 0
-        cnt1 = 0
-        cnt2 = 0
-        for x in ind[i][0:K]:
-            if(y_fraud_train[x] == 0):
-                cnt0 +=1
-            if(y_fraud_train[x] == 1):
-                cnt1 +=1
-            if(y_fraud_train[x] == 2):
-                cnt2 +=1
-        Cred[i][0] = float(cnt0/K)
-        Cred[i][1] = float(cnt1/K)
-        Cred[i][2] = float(cnt2/K)
-    Cred = np.array(Cred)
-    return Cred
+    def BN_go(self,org_name,peering_name,rel_file,prob_file,path_file,output_file,version=4):
+        link = Links(org_name, peering_name,rel_file,prob_file,path_file,version)
+        link.constructAttributes()
+        self.BayesNetwork(link,output_file)
 
-params = {
-    'boosting_type': 'gbdt',  
-    'objective': 'multiclass',  
-    'num_class': 3,  
-    'metric': 'multi_error',  
-    'num_leaves': 300,  
-    'min_data_in_leaf': 500,  
-    'learning_rate': 0.01,  
-    'feature_fraction': 0.8,  
-    'bagging_fraction': 0.8,  
-    'bagging_freq': 5,  
-    'lambda_l1': 0.4,  
-    'lambda_l2': 0.5,  
-    'min_gain_to_split': 0.2,  
-    'verbose': -1,
-    'num_threads':4
-}
-
-def pro_knn_trains(X,Y,T,pred_X,ind,K,epoch):
-    Cred = GetCred(Y,K,ind)
-    print("cred done!")
-    #model = lgb.LGBMClassifier(params)
-    N = len(T)
-    y_final = np.zeros(N)
-    infer_res = []
-    print("start train")
-    num_round = 1000
-    for j in range(epoch):
-        print("epoch:" + str(j))
-        seed = j*1234
-        rng = np.random.RandomState(seed)
-        Pr = rng.rand(1,N)
+    def GetCred(self,y_fraud_train,K,ind):
+        y_fraud_train = np.array(y_fraud_train)
+        N = ind.shape[0]
+        Cred = [[0,0,0] for i in range(N)]
         for i in range(N):
-            left = Cred[i][0]
-            right = Cred[i][0]+Cred[i][1]
-            if(Pr[0][i] <= left ):
-                y_final[i] = 0
-            elif(Pr[0][i] <= right ):
-                y_final[i] = 1
-            if(Pr[0][i] > right):
-                y_final[i] = 2
-        X_data = np.concatenate((X,T),axis=0)
-        Y_data = np.concatenate((Y,y_final),axis=0)
-        X_train,X_test,y_train,y_test=train_test_split(X_data,Y_data,test_size=0.2)
-        train_data = lgb.Dataset(X_train,label=y_train)
-        validation_data = lgb.Dataset(X_test,label=y_test)
-        model=lgb.train(params,train_data,num_round,valid_sets=[validation_data],early_stopping_rounds = 100)
+            cnt0 = 0
+            cnt1 = 0
+            cnt2 = 0
+            for x in ind[i][0:K]:
+                if(y_fraud_train[x] == 0):
+                    cnt0 +=1
+                if(y_fraud_train[x] == 1):
+                    cnt1 +=1
+                if(y_fraud_train[x] == 2):
+                    cnt2 +=1
+            Cred[i][0] = float(cnt0/K)
+            Cred[i][1] = float(cnt1/K)
+            Cred[i][2] = float(cnt2/K)
+        Cred = np.array(Cred)
+        return Cred
 
-        # dtrain=xgb.DMatrix(X_train,label=y_train)
-        # dtest=xgb.DMatrix(X_test,label=y_test)
-        # evallist = [(dtest, 'eval'), (dtrain, 'train')]
-        # model=xgb.train(parms,dtrain,num_round,evals=evallist,early_stopping_rounds=100)
-        pred = model.predict(pred_X)
-        infer_res.append(pred)
-    return infer_res
+    def pro_knn_trains(self,X,Y,T,pred_X,ind,K,epoch):
+        Cred = self.GetCred(Y,K,ind)
+        print("cred done!")
+        #model = lgb.LGBMClassifier(params)
+        N = len(T)
+        y_final = np.zeros(N)
+        infer_res = []
+        print("start train")
+        num_round = 1000
+        for j in range(epoch):
+            print("epoch:" + str(j))
+            seed = j*1234
+            rng = np.random.RandomState(seed)
+            Pr = rng.rand(1,N)
+            for i in range(N):
+                left = Cred[i][0]
+                right = Cred[i][0]+Cred[i][1]
+                if(Pr[0][i] <= left ):
+                    y_final[i] = 0
+                elif(Pr[0][i] <= right ):
+                    y_final[i] = 1
+                if(Pr[0][i] > right):
+                    y_final[i] = 2
+            X_data = np.concatenate((X,T),axis=0)
+            Y_data = np.concatenate((Y,y_final),axis=0)
+            X_train,X_test,y_train,y_test=train_test_split(X_data,Y_data,test_size=0.2)
+            train_data = lgb.Dataset(X_train,label=y_train)
+            validation_data = lgb.Dataset(X_test,label=y_test)
+            model=lgb.train(self.params,train_data,num_round,valid_sets=[validation_data],early_stopping_rounds = 100)
 
+            # dtrain=xgb.DMatrix(X_train,label=y_train)
+            # dtest=xgb.DMatrix(X_test,label=y_test)
+            # evallist = [(dtest, 'eval'), (dtrain, 'train')]
+            # model=xgb.train(parms,dtrain,num_round,evals=evallist,early_stopping_rounds=100)
+            pred = model.predict(pred_X)
+            infer_res.append(pred)
+        return infer_res
 
-def NN_go(input_file,output):
-    p1 = time.time()
-    df = pd.read_csv(input_file)
+    def NN_go(self,input_file,output):
+        p1 = time.time()
+        df = pd.read_csv(input_file)
 
-    trust = df.loc[df['label']!=3]
-    trust_Y=trust['label'].astype(int).values
-    # trust_x=trust.drop(['link','label'],axis = 1).astype(float)
-    # trust_X = preprocessing.MinMaxScaler().fit_transform(trust_x.values)
-    
-    ud = df.loc[df['label']==3]
-    ud_Y=ud['label'].astype(int).values
-    # ud_x=ud.drop(['link','label'],axis = 1).astype(float)
-    # ud_X = preprocessing.MinMaxScaler().fit_transform(ud_x.values)
+        trust = df.loc[df['label']!=3]
+        trust_Y=trust['label'].astype(int).values
+        # trust_x=trust.drop(['link','label'],axis = 1).astype(float)
+        # trust_X = preprocessing.MinMaxScaler().fit_transform(trust_x.values)
 
-    trust_X=[]
-    ud_X=[]
-    def safe_drop(df,key):
-        ch = np.array(df[key].astype(float))
-        if np.isnan(ch).any():
-            for i in np.nditer(np.where(np.isnan(ch))):
-                df = df.drop([i],axis=0)
-        return df
-    
-    # df = safe_drop(df,'distance1')
-    # df = safe_drop(df,'distance2')
-    # node = np.array(df['link'].astype(str))
-    # print(node[200435],ch[200435])
-    # print(node[542146],ch[542146])
-    # print(df.at[200435,'distance1'])
-    Y = df['label'].astype(int).values
-    x = df.drop(['link','label'],axis = 1).astype(float)
-    X = preprocessing.MinMaxScaler().fit_transform(x.values)
-    # print(np.where(np.isnan(ch)))
-    ud_loc2idx=[]
-    for loc,idx in enumerate(trust.index):
-        trust_X.append(X[idx])
-    for loc, idx in enumerate(ud.index):
-        ud_X.append(X[idx])
-        ud_loc2idx.append(idx)
-    print(len(ud_X))
-    print('read labels')
-    print('constructing kdtree')
-    neigh = NearestNeighbors(n_neighbors = 100, algorithm = 'kd_tree',n_jobs = 4)
-    neigh.fit(trust_X)
-    print('construction complete')
-    print('searching knn')
-    dis,ind = neigh.kneighbors(ud_X,100)
-    p2 = time.time()
-    print(f'searched knn: {p2-p1}s')
-    k = 50
-    epoch = 10
-    y_prob1= pro_knn_trains(trust_X,trust_Y,ud_X,ud_X,ind,k,epoch)
+        ud = df.loc[df['label']==3]
+        ud_Y=ud['label'].astype(int).values
 
-    # res = []
-    # for epoch_i in y_prob1:
-    #     infer = []
-    #     for i in epoch_i:
-    #         infer.append(np.argmax(i))
-    #     res.append(infer)
-    p3 = time.time()
-    print(f'outputing: {p3-p2}')
-    res = np.array(y_prob1)
-    res = np.mean(res,axis=0)
-    res = np.argmax(res,axis=1)
-    # ud['label']=res
-    # ccnt =0
-    final = df[['link','label']]
-    for loc, idx in enumerate(ud_loc2idx):
-        final.at[idx,'label']=res[loc]
-    # for  cnt, (index, row) in enumerate(ud.iterrows()):
-    #     row['label']=res[cnt]
-    #     ccnt = cnt
-    # print(cnt)
-    # final = df[['link','label']]
-    # for index, row in ud.iterrows():
-    #     final.at[index,'label']=row['label']
-    
-    f = open(output,'w')
-    linkset=set()
-    for index,row in final.iterrows():
-        link = row['link']
-        rel = row['label']
-        a1=link[0].strip()
-        a2=link[1].strip()
-        a1,a2 = link.split(',')
-        a1= a1.replace('(','')
-        a1=a1.replace(')','')
-        a1=a1.replace('\'','')
-        a1=a1.replace('\\n','')
-        a2=a2.replace('(','')
-        a2=a2.replace(')','')
-        a2=a2.replace('\'','')
-        a2=a2.replace('\\n','')
-        a1=a1.strip()
-        a2=a2.strip()
-        rel-=1
-        if (a1,a2) in linkset:
-            continue
-        f.write(f'{a1}|{a2}|{rel}\n')
-        linkset.add((a1,a2))
-        linkset.add((a2,a1))
-    f.close()
-    p4 = time.time()
-    print(f'output time: {p4-p3}s')
-    print(f'finished computation {input_file}: {p4-p1}s')
+        trust_X=[]
+        ud_X=[]
+        def safe_drop(df,key):
+            ch = np.array(df[key].astype(float))
+            if np.isnan(ch).any():
+                for i in np.nditer(np.where(np.isnan(ch))):
+                    df = df.drop([i],axis=0)
+            return df
 
+        Y = df['label'].astype(int).values
+        x = df.drop(['link','label'],axis = 1).astype(float)
+        X = preprocessing.MinMaxScaler().fit_transform(x.values)
+        ud_loc2idx=[]
+        for loc,idx in enumerate(trust.index):
+            trust_X.append(X[idx])
+        for loc, idx in enumerate(ud.index):
+            ud_X.append(X[idx])
+            ud_loc2idx.append(idx)
+        print(len(ud_X))
+        print('read labels')
+        print('constructing kdtree')
+        neigh = NearestNeighbors(n_neighbors = 100, algorithm = 'kd_tree',n_jobs = 4)
+        neigh.fit(trust_X)
+        print('construction complete')
+        print('searching knn')
+        dis,ind = neigh.kneighbors(ud_X,100)
+        p2 = time.time()
+        print(f'searched knn: {p2-p1}s')
+        k = 50
+        epoch = 10
+        y_prob1= self.pro_knn_trains(trust_X,trust_Y,ud_X,ud_X,ind,k,epoch)
+        p3 = time.time()
+        print(f'outputing: {p3-p2}')
+        res = np.array(y_prob1)
+        res = np.mean(res,axis=0)
+        res = np.argmax(res,axis=1)
+        final = df[['link','label']]
+        for loc, idx in enumerate(ud_loc2idx):
+            final.at[idx,'label']=res[loc]
 
-#ENABLE
-#TODO
-# this knn facked up
+        f = open(output,'w')
+        linkset=set()
+        for index,row in final.iterrows():
+            link = row['link']
+            rel = row['label']
+            a1=link[0].strip()
+            a2=link[1].strip()
+            a1,a2 = link.split(',')
+            a1= a1.replace('(','')
+            a1=a1.replace(')','')
+            a1=a1.replace('\'','')
+            a1=a1.replace('\\n','')
+            a2=a2.replace('(','')
+            a2=a2.replace(')','')
+            a2=a2.replace('\'','')
+            a2=a2.replace('\\n','')
+            a1=a1.strip()
+            a2=a2.strip()
+            rel-=1
+            if (a1,a2) in linkset:
+                continue
+            f.write(f'{a1}|{a2}|{rel}\n')
+            linkset.add((a1,a2))
+            linkset.add((a2,a1))
+        f.close()
+        p4 = time.time()
+        print(f'output time: {p4-p3}s')
+        print(f'finished computation {input_file}: {p4-p1}s')
 
-
-# vote-prob-bngoo
 
 preview = False
 
@@ -1889,13 +1621,13 @@ if __name__=='__main__' and v6:
         struc.get_relation(boost_file)
         struc.cal_hierarchy(6)
         struc.set_VP_type(path_file,6)
-        struc.clean_TS(fulld)
+        struc.clean_vp(fulld)
         if len(os.listdir(fulld)):
             print('unclean')
         print(os.listdir(fulld))
                 #V6SET
-        struc.divide_TS(30,fulld,date)
-        struc.infer_TS(fulld,ar_version,date)
+        struc.divide_VP(30,fulld,date)
+        struc.infer_ar(fulld,ar_version,date)
         files = os.listdir(fulld)
         # in_files = []
         # out_files = []
@@ -2596,39 +2328,6 @@ if __name__=='__main__' and vote:
     # outf = join(votd,'apv','ar_bv.rel')
     # struc.vote_ap(_apfiles,outf)   
 
-if __name__=='__main__' and cross:
-
-    irr_file='/home/lwd/Result/auxiliary/irr.txt'
-    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
-
-    s_dir='/home/lwd/RIB.test/path.test'
-    r_dir='/home/lwd/Result'
-
-    ts_working_dir='TS_working'
-    ap_working_dir='AP_working'
-
-    auxd = join(r_dir,'auxiliary')
-    tswd = join(r_dir,ts_working_dir)
-    apwd = join(r_dir,ap_working_dir)
-
-    votd = join(r_dir,'vote')
-
-    tsfiles = os.listdir(tswd)
-    apfiles = os.listdir(apwd)
-
-    _tsfiles=[]
-    _apfiles=[]
-    for n in tsfiles:
-        if n.endswith('.path'):
-            _tsfiles.append(n)
-
-    ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
-    struc = Struc()
-    struc.read_irr(irr_file)
-
-    struc.cross_ap(tswd,_tsfiles)
-
-    quit()
 
 if __name__=='__main__' and simple:
     print('start simple')
@@ -2911,82 +2610,3 @@ if __name__=='__main__' and nngoo:
         # NN_go(name,outname)
     with multiprocessing.Pool(6) as pool:
         pool.map(use_p,NN_args)
-
-if __name__=='__main__' and main:
-    quit()
-    print('start')
-
-    group_size=25
-    irr_file='/home/lwd/Result/auxiliary/irr.txt'
-    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
-
-    s_dir='/home/lwd/RIB.test/path.test'
-    r_dir='/home/lwd/Result'
-
-    ts_working_dir='TS_working'
-    ap_working_dir='AP_working'
-
-    auxd = join(r_dir,'auxiliary')
-    tswd = join(r_dir,ts_working_dir)
-    apwd = join(r_dir,ap_working_dir)
-
-    
-
-
-
-    # TS simple infer 
-    ar_version='/home/lwd/AT/TopoScope/asrank_irr.pl'
-
-    # boost_file = join(tswd,boost_file)
-    path_dir = s_dir
-    def checke(path):
-        if exists(path):
-            print(f'ready:{path}')
-        else:
-            print(f'not exists:{path}')
-
-    names = os.listdir(path_dir)
-    #TODO
-    # names=[ 'pc20201201.v4.u.path.clean']
-    names.sort()
-    for idx,name in enumerate(names):
-        if name.endswith('.clean'):
-            if 'v6' in name:
-                continue
-            date=f'unknown{idx}'
-            res = re.match(r'^pc([0-9]+)',name)
-            if res is not None:
-                date = res.group(1)
-            boost_file=join(auxd,f'pc{date}.v4.arout')
-
-            path_file = join(s_dir,name)
-
-            checke(irr_file)
-            checke(boost_file)
-            checke(path_dir)
-            checke(path_file)
-            checke(ar_version)
-            checke(auxd)
-            checke(tswd)
-            checke(apwd)
-            
-            print(f'date:{date}')
-            # while True:
-            #     a = input('continue?')
-            #     if a == 'y':
-            #         break
-            #     elif a =='n':
-            #         quit()
-            
-            struc = Struc()
-            struc.read_irr(irr_file)
-            #TODO
-            struc.get_relation(boost_file)
-            struc.cal_hierarchy()
-            struc.set_VP_type(path_file)
-            struc.divide_TS(group_size,tswd,date)
-            struc.infer_TS(tswd,ar_version,date)
-
-            # ap_file= join(apwd,f'rel_{date}.st1')
-            # wp_file= join(apwd,f'rel_{date}.wrn')
-            # struc.apollo(path_file,ap_file,wp_file) # AP simple infer
