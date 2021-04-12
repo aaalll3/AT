@@ -2,7 +2,6 @@ from ctypes import alignment
 from logging import critical
 import os
 from os import path
-from run import BN_go
 import networkx as nx
 import json
 import re
@@ -1282,8 +1281,13 @@ if __name__ == "__main__":
         '/home/lwd/Result/BN/ar_vpg_v6.rel.bn_0.7_30',
     ]
     seed = [
-        '/home/lwd/Result/auxiliary/pc20201201.v6.arout',
-        '/home/lwd/Result/BN/ar_vpg_v6.rel_ad72.bn_0.5_30',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cmp',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cmp1',
+        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp',
+        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp1',
+        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp2',
+        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cv_lcmp2',
     ]
 #usage
     e = comm(6)
@@ -1304,7 +1308,7 @@ if __name__ == "__main__":
     # go = noirr[-2:]
     # go = tmp
     # go = s1_list
-    go = v6
+    go = seed
     for ff in go:
         last_name= ff.split('/')[-1]
         test_file_list.append(f'/home/lwd/Result/cmp/{last_name}')
