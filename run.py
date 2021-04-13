@@ -198,40 +198,6 @@ class Struc():
                 self.partialVP.add(VP)
         print([len(self.pre_VP),len(self.sec_VP),len(self.partialVP)])
 
-    def process_line_AP(self,ASes,version=4):
-        # info(f'[Struc.process_line_AP]AP: process AS path {ASes}')
-        thetier_1=None
-        if version ==4 :
-            thetier_1=self.tier_1
-        else:
-            thetier_1=self.tier_1_v6
-        for i in range(len(ASes)-1):
-            if(ASes[i],ASes[i+1]) in self.irr_c2p:
-                self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
-            if(ASes[i+1],ASes[i]) in self.irr_c2p:
-                self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(-1)
-            if(ASes[i],ASes[i+1]) in self.irr_p2p or (ASes[i+1],ASes[i]) in self.irr_p2p:
-                self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(0)
-            if ASes[i] in thetier_1 and ASes[i+1] in rhetier_1:
-                self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(0)
-        idx = -1
-        cnt = 0
-        for i in range(len(ASes)):
-            if ASes[i] in thetier_1:
-                idx = i
-                cnt+=1
-        if cnt>=2 and ASes[idx-1] not in thetier_1:
-            self.wrong_path.append(ASes)
-            return
-        if idx>=2:
-            for i in range(idx-1):
-                self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
-        if idx<=len(ASes)-2 and cnt>0:
-            for i in range(idx-1):
-                self.link_relation.setdefault((ASes[i],ASes[i+1]),set()).add(1)
-        if idx == -1:
-            self.non_tier_1.append(ASes)
-
     def core2leaf(self, path_files, output_file,version=4):
         """
         A easy core to leaf infer with irr
@@ -353,7 +319,8 @@ class Struc():
                         if rel is None:
                             convert = True
                         rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-                        if rel != -1:
+                        rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),1)
+                        if rel != -1 or rrel != 1:
                             link_rel_ap[(ASes[i],ASes[i+1])]=4
                 if idx_1 !=0:
                     for i in range(idx_1-1):
@@ -361,7 +328,8 @@ class Struc():
                         if rel is None:
                             convert = True
                         rel=link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
-                        if rel != 1:
+                        rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),-1)
+                        if rel != 1 or rrel != -1:
                             link_rel_ap[(ASes[i],ASes[i+1])]=4
                 if idx_0 !=0:
                     if idx_0>=2:
@@ -370,7 +338,8 @@ class Struc():
                             if rel is None:
                                 convert = True
                             rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
-                            if rel != 1:
+                            rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),-1)
+                            if rel != 1 or rrel != -1:
                                 link_rel_ap[(ASes[i],ASes[i+1])]=4
                     if idx_0<=len(ASes)-2:
                         for i in range(idx_0+1,len(ASes)-1):
@@ -378,9 +347,9 @@ class Struc():
                             if rel is None:
                                 convert = True
                             rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-                            if rel != -1:
+                            rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),1)
+                            if rel != -1 or rrel != 1:
                                 link_rel_ap[(ASes[i],ASes[i+1])]=4
-            
             if not convert:
                 break
             t2= time.time()
@@ -794,8 +763,8 @@ class Struc():
         command = f"perl {ar_version} {inf} > {outf}"
         os.system(command)   
 
-    def vote_simple_vp(self,file_num,dir,in_files,out_files):
-        self.topoFusion = TopoFusion(file_num,dir,'no')
+    def vote_simple_vp(self,file_num,in_files,out_files,path=None):
+        self.topoFusion = TopoFusion(file_num,'placeholder','placeholder',path_file=path)
         self.topoFusion.vote_among(in_files,out_files)
 
     # path_file, peeringdb file, AP vote out
@@ -1569,16 +1538,39 @@ if __name__=='__main__':
     print('start preview')
     struc = Struc()
     struc.read_irr(irr_file)
-    path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
+    path_file='/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
     peeringdb_file='/home/lwd/Result/auxiliary/peeringdb.sqlite3'
     name = '/home/lwd/Result/vote/apv/ap2_apv.rel'
     tmp = name.split('/')[-1]
     outname=tmp.replace('.rel','.fea.csv')
     outname=join('/home/lwd/Result/AP_working',outname)
 
-    inf = '/home/lwd/Result/TS_working/path_20201201_vp0.path'
-    outf = '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cv_lcmp2'
+    inf = '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
+    outf = '/home/lwd/Result/auxiliary/pc20201201.v4.c_irr.ap2out'
     struc.apollo_it(inf,outf)
+
+    # path_file='/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
+    # oneday = set()
+    # pf = open(path_file,'r')
+    # for line in pf:
+    #     if line.startswith('#'):
+    #         continue
+    #     ASes = line.strip().split('|')
+    #     for i in range(len(ASes)-1):
+    #         oneday.add((ASes[i],ASes[i+1]))
+    #         oneday.add((ASes[i+1],ASes[i]))
+    # print('one',len(oneday))
+    # path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
+    # allday = set()
+    # pf = open(path_file,'r')
+    # for line in pf:
+    #     if line.startswith('#'):
+    #         continue
+    #     ASes = line.strip().split('|')
+    #     for i in range(len(ASes)-1):
+    #         allday.add((ASes[i],ASes[i+1]))
+    #         allday.add((ASes[i+1],ASes[i]))
+    # print('all',len(allday))
 
     # outname= join('/home/lwd/Result/NN','ap2_apv_nn_pv.rel')
     # checke('/home/lwd/Result/AP_working/ap2_apv.fea.csv')

@@ -1284,10 +1284,17 @@ if __name__ == "__main__":
         # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2',
         # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cmp',
         # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cmp1',
-        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp',
-        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp1',
-        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp2',
-        '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cv_lcmp2',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp1',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.lcmp2',
+        # '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.cv_lcmp2',
+        # '/home/lwd/Result/auxiliary/pc20201201.v4.c_irr.ap2out',
+        # '/home/lwd/Result/auxiliary/pc20201201.v4.irr.ap2out',
+        # '/home/lwd/Result/auxiliary/pc20201201.v4.ap2out',
+        '/home/lwd/Result/BN/ar_vpg.rel.bn',
+        '/home/lwd/Result/BN/lap2_vpg.rel.bn',
+        '/home/lwd/Result/BN/sap2_vpg.rel.bn',
+        '/home/lwd/Result/BN/stg.rel.bn',
     ]
 #usage
     e = comm(6)

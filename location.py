@@ -32,4 +32,5 @@ irr_file='/home/lwd/Result/auxiliary/irr.txt'
 s_dir='/home/lwd/RIB.test/path.test'  # source dir
 r_dir='/home/lwd/Result'              # Result dir
 
+rdir = '/home/lwd/Result'            # Result dir
 vdir = "/home/lwd/Result/vote"
