@@ -2,7 +2,7 @@ import time
 
 #######################################################################
 ### Core to leaf algorithm to infer AS relationships:               ###
-###     Usage: core2leaf_loose(path_file, output_file, irr_file)          ###
+###     Usage: core2leaf_loose(path_file, output_file, irr_file)    ###
 ###     irr_file = None: don't use irr file                         ###
 #######################################################################
 
