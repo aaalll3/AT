@@ -279,6 +279,7 @@ class Struc():
                         if rel != -1:
                             link_rel_ap[(ASes[i],ASes[i+1])] = 4
                         continue
+                    # irr
                     if(ASes[i],ASes[i+1]) in self.irr_c2p:
                         link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
                     if(ASes[i+1],ASes[i]) in self.irr_c2p:
@@ -296,13 +297,17 @@ class Struc():
         print(f'done first time: {p2-p1}s')
         turn = 0
         while True:
+            tmp = []
             convert = False
             turn += 1
             t1= time.time()
+            print(f'start it{turn}, {len(non_t1)}')
             for ASes in non_t1:
+                convert_sub = False
                 idx_11 = 0
                 idx_1 = 0
                 idx_0 = 0
+                
                 for i in range(len(ASes)-1):
                     if (ASes[i],ASes[i+1]) in link_rel_ap.keys() \
                         and link_rel_ap[(ASes[i],ASes[i+1])] == -1:
@@ -318,40 +323,47 @@ class Struc():
                         rel = link_rel_ap.get((ASes[i],ASes[i+1]))
                         if rel is None:
                             convert = True
-                        rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-                        rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),1)
-                        if rel != -1 or rrel != 1:
-                            link_rel_ap[(ASes[i],ASes[i+1])]=4
+                            convert_sub = True
+                            link_rel_ap[(ASes[i],ASes[i+1])] = -1
+                        else:
+                            if rel != -1:
+                                link_rel_ap[(ASes[i],ASes[i+1])]=4
                 if idx_1 !=0:
                     for i in range(idx_1-1):
                         rel = link_rel_ap.get((ASes[i],ASes[i+1]))
                         if rel is None:
                             convert = True
-                        rel=link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
-                        rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),-1)
-                        if rel != 1 or rrel != -1:
-                            link_rel_ap[(ASes[i],ASes[i+1])]=4
+                            convert_sub = True
+                            link_rel_ap[(ASes[i],ASes[i+1])]=1 
+                        else:
+                            if rel != 1:
+                                link_rel_ap[(ASes[i],ASes[i+1])]=4
                 if idx_0 !=0:
                     if idx_0>=2:
                         for i in range(idx_0-1):
                             rel = link_rel_ap.get((ASes[i],ASes[i+1]))
                             if rel is None:
                                 convert = True
-                            rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),1)
-                            rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),-1)
-                            if rel != 1 or rrel != -1:
-                                link_rel_ap[(ASes[i],ASes[i+1])]=4
+                                convert_sub = True
+                                link_rel_ap[(ASes[i],ASes[i+1])]=1
+                            else:
+                                if rel != 1:
+                                    link_rel_ap[(ASes[i],ASes[i+1])]=4
                     if idx_0<=len(ASes)-2:
                         for i in range(idx_0+1,len(ASes)-1):
                             rel = link_rel_ap.get((ASes[i],ASes[i+1]))
                             if rel is None:
                                 convert = True
-                            rel = link_rel_ap.setdefault((ASes[i],ASes[i+1]),-1)
-                            rrel = link_rel_ap.setdefault((ASes[i+1],ASes[i]),1)
-                            if rel != -1 or rrel != 1:
-                                link_rel_ap[(ASes[i],ASes[i+1])]=4
+                                convert_sub = True
+                                link_rel_ap[(ASes[i],ASes[i+1])]=-1
+                            else:
+                                if rel != -1:
+                                    link_rel_ap[(ASes[i],ASes[i+1])]=4
+                if not convert_sub:
+                    tmp.append(ASes)
             if not convert:
                 break
+            non_t1 = tmp
             t2= time.time()
             print(f'for it{turn}, takes {t2-t1}s')
         wf = open(output_file,'w')
@@ -370,6 +382,7 @@ class Struc():
                 wf.write(line)
             linkset.add(link)
             linkset.add(rev)
+            # loose
         for link in all_link:
             if link in linkset:
                 continue
@@ -1546,7 +1559,9 @@ if __name__=='__main__':
     outname=join('/home/lwd/Result/AP_working',outname)
 
     inf = '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
-    outf = '/home/lwd/Result/auxiliary/pc20201201.v4.c_irr.ap2out'
+    outf = '/home/lwd/Result/auxiliary/pc20201201.v4.half.sap2out'
+    # inf = '/home/lwd/Result/TS_working/path_20201201_vp0.path'
+    # outf = '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.half'
     struc.apollo_it(inf,outf)
 
     # path_file='/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
