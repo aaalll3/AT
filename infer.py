@@ -2,6 +2,8 @@ import os
 import sys
 import multiprocessing
 from location import checke,auxiliary,pure_path_dir,rdir,vdir
+from groupByOrigin import groupByOrigin
+from groupByVP import groupByVP
 from stage1 import Struc
 from stage2 import Stage2
 import time
@@ -9,7 +11,8 @@ import time
 
 # for multiprocess
 def use(args):
-    args[0](args[1],args[2],args[3],args[4])
+    args[0](args[1],args[2],args[3])
+
 def use_bn_go(args):
     start = time.time()
     func = args[0]
@@ -28,6 +31,9 @@ class Infeur(object):
         if remove:
             print('\033[31mremove ON!\033[0m') 
             time.sleep(0.5)
+        # first create struc
+        self.struc = Struc()
+
         self.path_file = os.path.join(pure_path_dir,path_file)
         self.irr_file = irr_file if irr_file else os.path.join(auxiliary,'irr.txt')
         self.boost_file = boost_file if boost_file else os.path.join(auxiliary,'boost_file.ar')
@@ -44,7 +50,6 @@ class Infeur(object):
             assert checke(name)
         # init
         self.struc = Struc()
-        self.struc.read_irr(self.irr_file)
         self.id = id
         self.version = version
         self.remove = remove
@@ -84,15 +89,19 @@ class Infeur(object):
         self.fulldir_name = fulldir_name
         self.fullvote_name = fullvote_name
 
-        self.struc.get_relation(self.boost_file)
-        self.struc.cal_hierarchy(self.version)
-        self.struc.set_VP_type(self.path_file,self.version)
-        self.struc.clean_vp(self.fulldir_name)
+        self.vpg = groupByVP()
+        self.orig =  groupByOrigin(25,self.fulldir_name)
+        self.vpg.get_relation(self.boost_file)
+        self.vpg.cal_hierarchy(self.version)
+        self.vpg.set_VP_type(self.path_file,self.version)
+        self.vpg.clean_vp(self.fulldir_name)
         if len(os.listdir(self.fulldir_name)):
             print('\033[31munclean\033[0m')
         else:
             print('\033[32mcleaned\033[0m')
-        self.struc.divide_VP(self.param['group_size'],self.fulldir_name,self.id)
+        self.vpg.divide_VP(self.param['group_size'],self.fulldir_name,self.id)
+
+        self.orig.just_divide(self.path_file,self.id)
         p2 = time.time()
         print(f'\033[31mdone\033[0m prepare, takes {p2-p1:.2f} seconds')
 
@@ -126,14 +135,12 @@ class Infeur(object):
         # adding c2f arguments: function, path file, output file, iterations(now discard), version
         args = []
         for ii,oo in zip(in_files,out_files):
-            args.append([self.struc.c2f_loose,ii,oo+'.lap2',5,6])
-            args.append([self.struc.c2f_strict,ii,oo+'.sap2',5,6])
-    
-        # adding strong rule arguments: function, path file, output file, K step, version
-        args.append([self.struc.c2f_strong,self.path_file,\
-            os.path.join(self.fulldir_name,f'rel_{self.id}.stg'),1,6])
+            args.append([self.struc.c2f_loose,ii,oo+'.lap2',irr_file])
+            args.append([self.struc.c2f_strict,ii,oo+'.sap2',irr_file])
         with multiprocessing.Pool(96) as pool:
             pool.map(self.use,args)
+        
+        self.struc.c2f_strong(self.path_file,os.path.join(self.fulldir_name,f'rel_{self.id}.stg'),1)
 
     def vote(self):
         '''
@@ -145,22 +152,40 @@ class Infeur(object):
         file_num = 0
         for name  in files:
             if name.endswith('.path'):
-                file_num+=1
+                if 'vp' in name:
+                    file_num+=1
 
+# vp
         file_list=[f'rel_{self.id}_vp{i}.lap2' for i in range(0,file_num)]
         file_list=[os.path.join(self.fulldir_name,one) for one in file_list]
         output_file=os.path.join(self.fullvote_name,'lap2_vpg.rel')
-        self.struc.vote_simple_vp(14,file_list,output_file,path_file=self.path_file)
+        self.struc.vote_simple_vp(file_num,file_list,output_file,path_file=self.path_file)
 
         file_list=[f'rel_{self.id}_vp{i}.sap2' for i in range(0,file_num)]
         file_list=[os.path.join(self.fulldir_name,one) for one in file_list]
         output_file=os.path.join(self.fullvote_name,'sap2_vpg.rel')
-        self.struc.vote_simple_vp(14,file_list,output_file,path_file=self.path_file)
+        self.struc.vote_simple_vp(file_num,file_list,output_file,path_file=self.path_file)
 
         file_list=[f'rel_{self.id}_vp{i}.ar' for i in range(0,file_num)]
         file_list=[os.path.join(self.fulldir_name,one) for one in file_list]
         output_file=os.path.join(self.fullvote_name,'ar_vpg.rel')
-        self.struc.vote_simple_vp(14,file_list,output_file,path_file=self.path_file)
+        self.struc.vote_simple_vp(file_num,file_list,output_file,path_file=self.path_file)
+
+# ori
+        # file_list=[f'rel_{self.id}_ori{i}.lap2' for i in range(0,file_num)]
+        # file_list=[os.path.join(self.fulldir_name,one) for one in file_list]
+        # output_file=os.path.join(self.fullvote_name,'lap2_orig.rel')
+        # self.struc.vote_simple_ori(file_num,file_list,output_file,path_file=self.path_file)
+
+        # file_list=[f'rel_{self.id}_ori{i}.sap2' for i in range(0,file_num)]
+        # file_list=[os.path.join(self.fulldir_name,one) for one in file_list]
+        # output_file=os.path.join(self.fullvote_name,'sap2_orig.rel')
+        # self.struc.vote_simple_ori(file_num,file_list,output_file,path_file=self.path_file)
+
+        # file_list=[f'rel_{self.id}_ori{i}.ar' for i in range(0,file_num)]
+        # file_list=[os.path.join(self.fulldir_name,one) for one in file_list]
+        # output_file=os.path.join(self.fullvote_name,'ar_orig.rel')
+        # self.struc.vote_simple_ori(file_num,file_list,output_file,path_file=self.path_file)
 
         print('NOW prob')
         stg_file = os.path.join(self.fulldir_name,f'rel_{self.id}.stg')
