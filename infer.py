@@ -10,8 +10,12 @@ import time
 
 
 # for multiprocess
-def use(args):
+def use3(args):
+
     args[0](args[1],args[2],args[3])
+
+def use4(args):
+    args[0](args[1],args[2],args[3],args[4])
 
 def use_bn_go(args):
     start = time.time()
@@ -59,7 +63,8 @@ class Infeur(object):
             'group_size':25
         }
 
-        self.use = use
+        self.use3 = use3
+        self.use4 = use4
         self.use_bn_go = use_bn_go
         self.prepare(working_dir_name)
 
@@ -113,7 +118,7 @@ class Infeur(object):
         as rank
         strong rule
         '''
-        print('\033[31mNOW\033[0m infer')
+        print('\033[31mNOW\033[0m basic infer')
         files = os.listdir(self.fulldir_name)
         in_files = []
         out_files = []
@@ -124,23 +129,32 @@ class Infeur(object):
                 oname = oname.replace('path','rel')
                 out_files.append(os.path.join(self.fulldir_name,oname))
 
+        args = []
         # run as rank separately
         for ii,oo in zip(in_files,out_files):
-            self.struc.infer_ar(self.ar_version,ii,oo+'.ar')
+            print(f'ar run@{ii}')
+            args.append([self.struc.infer_ar,self.ar_version,ii,oo+'.ar'])
+            # self.struc.infer_ar(self.ar_version,ii,oo+'.ar')
+            print('done')
+        #tt
+        with multiprocessing.Pool(96) as pool:
+            pool.map(self.use3,args)
 
         # for multiprocess
-        def use(args):
-            args[0](args[1],args[2],args[3],args[4])
 
         # adding c2f arguments: function, path file, output file, iterations(now discard), version
         args = []
         for ii,oo in zip(in_files,out_files):
             args.append([self.struc.c2f_loose,ii,oo+'.lap2',irr_file])
             args.append([self.struc.c2f_strict,ii,oo+'.sap2',irr_file])
+
+        #tt
         with multiprocessing.Pool(96) as pool:
-            pool.map(self.use,args)
+            pool.map(self.use3,args)
         
-        self.struc.c2f_strong(self.path_file,os.path.join(self.fulldir_name,f'rel_{self.id}.stg'),1)
+        print(f'strong rule@{self.path_file}')
+        self.struc.c2f_strong(self.path_file,os.path.join(self.fulldir_name,f'rel_{self.id}.stg'),None,1)
+        print('done sr')
 
     def vote(self):
         '''

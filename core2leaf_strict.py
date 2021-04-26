@@ -1,4 +1,6 @@
 import time
+import multiprocessing as mp
+
 
 #######################################################################
 ### Core to leaf algorithm to infer AS relationships:               ###
@@ -100,7 +102,7 @@ class core2leaf_strict:
     def iteration(self):
         time_now = time.time()
         iteration_time = 0
-        for time in range(self.it):
+        for _time in range(self.it):
             self.change_num = 0
             for asn_list in self.paths:
                 last_p2c = None
@@ -124,7 +126,7 @@ class core2leaf_strict:
             iteration_time += 1
             end_time = time.time()
             print(f'Infer from iteration {iteration_time} done: {end_time - time_now}s; change num: {self.change_num}')
-            if time == self.it - 1:
+            if _time == self.it - 1:
                 print('Iteration done!')
                 break
             time_now = end_time   
@@ -212,9 +214,20 @@ class core2leaf_strict:
         self.iteration()
         self.remove_duplicate()
         self.write_result()
-        
+
+def use(args):
+    instance = args[0](args[1],args[2],args[3])
+    instance.run()
+
+def c2f_strict_mp(args):
+    go = []
+    for pathes in args:
+        go.append([core2leaf_strict]+pathes)
+    with mp.Pool(96) as pool:
+        pool.map(use,go)
+
 if __name__ == "__main__":
-    instance = core2leaf_strict('pc202012.v4.u.path.clean', 'core2leaf_strict.txt', None)
+    instance = core2leaf_strict('/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean', 'core2leaf_strict.txt', None)
     instance.run()
 
 

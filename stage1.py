@@ -34,7 +34,7 @@ from hierarchy import Hierarchy
 from vpVoter import TopoFusion
 from originVoter import groupVoter
 from core2leaf_loose import core2leaf_loose
-from core2leaf_strict import core2leaf_strict
+from core2leaf_strict import core2leaf_strict,c2f_strict_mp
 from core2leaf_strong import core2leaf_strong
 
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
@@ -89,15 +89,18 @@ class Struc():
         self.path_file=path_file
         self.irr_file=irr_file
 
-    def c2f_loose(in_file,out_file, irr_file):
+    def c2f_loose(self,in_file,out_file, irr_file):
         my = core2leaf_loose(in_file,out_file,irr_file)
         my.run()
 
-    def c2f_strict(in_file,out_file,irr_file):
+    def c2f_strict(sefl,in_file,out_file,irr_file):
         my = core2leaf_strict(in_file,out_file,irr_file)
         my.run()
 
-    def c2f_strong(in_file,out_file,irr_file,it):
+    def c2f_strict_mp(sefl,args):
+        c2f_strict_mp(args)
+
+    def c2f_strong(self,in_file,out_file,irr_file,it=1):
         my = core2leaf_strong(in_file,out_file,irr_file,it)
         my.run()
 

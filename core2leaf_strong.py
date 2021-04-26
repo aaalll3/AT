@@ -5,8 +5,8 @@ class core2leaf_strong():
     def __init__(self,infile,outfile,irr_file,it) -> None:
         self.tier_1 = ['174', '209', '286', '701', '1239', '1299', '2828', '2914', 
             '3257', '3320', '3356', '3491', '5511', '6453', '6461', '6762', '6830', '7018', '12956']
-        self.in = infile
-        self.out = outfile
+        self.infile = infile
+        self.outfile = outfile
         self.irr = irr_file
         self.it = it
         self.irr_p2p=set()
@@ -36,7 +36,8 @@ class core2leaf_strong():
         link2rel = {}
         clique1=None
         clique2=None
-        with open(self.in,'r') as ff:
+        print('read')
+        with open(self.infile,'r') as ff:
             for line in ff:
                 discard=False
                 if line.startswith('#'):
@@ -67,6 +68,7 @@ class core2leaf_strong():
                     continue
                 true_path.append(ASes)
         ff.close()
+        print('iteration')
         for turn in range(self.it):
             tmp_true_path=[]
             for ASes in true_path:
@@ -123,7 +125,7 @@ class core2leaf_strong():
                         link2rel[link]=4
                     if forward_rel == -1 and backward_rel == -1:
                         link2rel[link]=4
-        with open(self.out,'w') as of:
+        with open(self.outfile,'w') as of:
             for link,rel in link2rel.items():
                 if rel ==4:
                     continue
