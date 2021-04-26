@@ -52,7 +52,7 @@ class validation_construct:
 
         for file_name in os.listdir(self.input_dir):
             full_name = os.path.join(self.input_dir, file_name)
-            if os.path.isfile(full_name):
+            if os.path.isfile(full_name) and 'v6' in full_name:
                 file_handle = open(full_name, 'r')
                 for line in file_handle:
                     line = line.strip()
@@ -152,7 +152,7 @@ def get_routeservers():
         print("Extract Community Relationships: Can't connect to Euro IX server!")
     
 
-    conn = sqlite3.connect('peeringdb.sqlite3')
+    conn = sqlite3.connect('/home/lwd/Result/auxiliary/peeringdb.sqlite3')
     c = conn.cursor()
     for row in c.execute("SELECT asn, info_type FROM 'peeringdb_network'"):
         asn, info_type = row
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     comm_file=os.path.join(auxiliary,'relationship_communities.txt')
     asorg_file=os.path.join(auxiliary,'20201001.as-org2info.txt')
     input_dir=raw_path_dir
-    output_dir=os.path.abspath('/home/lwd/RIB.test/validation')
+    output_dir=os.path.abspath('/home/lwd/RIB.test/validation6')
     
     checke(comm_file)
     checke(asorg_file)

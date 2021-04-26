@@ -1,6 +1,7 @@
 **/*.sqlite3
 **/.DS_Store
 **/__pycache__
+**/update/**
 
 TopoScope/test.path
 TopoScope/test.arout

@@ -26,8 +26,8 @@ class groupByOrigin:
 
 
 
-    def getOriginGroup(self):
-        with open('pc202012.v4.u.path.clean') as f:
+    def getOriginGroup(self,full_path='pc202012.v4.u.path.clean'):
+        with open(full_path) as f:
             for line in f:
                 ASes = line.strip().split('|')
                 origin = ASes[-1]
@@ -71,6 +71,15 @@ class groupByOrigin:
                 for path in self.origin2path[origin]:
                     f.write(path + '\n')
             f.close()
+
+    def just_write_path(self,date):
+        for i in range(self.groupNum):
+            name = os.path.join(self.dir,f'path_{date}_ori{i}.path') 
+            f = open(name, 'w')
+            for origin in self.originList[i]:
+                for path in self.origin2path[origin]:
+                    f.write(path + '\n')
+            f.close()
     
     def worker(self, args):
         src = args[0]
@@ -87,9 +96,10 @@ class groupByOrigin:
         with multiprocessing.Pool(process_num) as pool:
             pool.map(self.worker, args_list)
         
+    def just_divide(self,full_path,date):
+        self.getOriginGroup(full_path)
+        self.just_write_path(date)
 
-        
-    
     def run(self):
         self.getOriginGroup()
         self.writeOriginPath()
