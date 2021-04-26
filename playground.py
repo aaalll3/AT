@@ -1,16 +1,39 @@
+from collections import defaultdict
 import os
-import re
-import collections
 import multiprocessing
+import time
+import logging
+log_location = os.path.abspath(os.path.join('./log',f'log_playground_{time.time()}'))
+logging.basicConfig(filename=log_location,level=logging.INFO)
+
+def use(args):
+    a=set()
+    a.add('1')
+    return [a,{'a':a}]
 
 
 
-import networkx as nx
-import json
-from io import StringIO
-raise AssertionError('just a test, not your fault')
+args=[1,2,3]
 
-assert None
-'perl ./TopoScope/asrank_irr_v6_7.pl ../RIB.test/path.test/pc20201201.v6.u.path.clean > ../Result/auxiliary/pc20201201.v6c8.arout'
-'perl ./TopoScope/asrank_irr_v6_5.pl ../RIB.test/path.test/pc20201201.v6.u.path.clean > ../Result/auxiliary/pc20201201.v6c6.arout'
-'perl ./TopoScope/asrank_irr_v6_3.pl ../RIB.test/path.test/pc20201201.v6.u.path.clean > ../Result/auxiliary/pc20201201.v6c4.arout'
+start = time.time()
+upds = os.path.abspath('/home/lwd/Update/')
+apool = multiprocessing.Pool(96)
+res = apool.map(use,args)
+see = set()
+
+asdf = defaultdict(set)
+print(res)
+for ss in res:  
+    see = see.union(ss[0])
+    for k,v in ss[1].items():
+        print(v)
+        print(asdf[k])
+        asdf[k] = asdf[k].union(v)
+print(see)
+
+for k,v in asdf.items():
+    print(k)
+    print(v)
+end = time.time()
+1/0
+print(f'takes {end-start}s')
