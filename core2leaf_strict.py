@@ -105,11 +105,7 @@ class core2leaf_strict:
     def iteration(self):
         time_now = time.time()
         iteration_time = 0
-<<<<<<< HEAD
-        for time in range(self.it):
-=======
         for _time in range(self.it):
->>>>>>> split2
             self.change_num = 0
             for asn_list in self.paths:
                 last_p2c = None
@@ -133,11 +129,7 @@ class core2leaf_strict:
             iteration_time += 1
             end_time = time.time()
             print(f'Infer from iteration {iteration_time} done: {end_time - time_now}s; change num: {self.change_num}')
-<<<<<<< HEAD
-            if time == self.it - 1:
-=======
             if _time == self.it - 1:
->>>>>>> split2
                 print('Iteration done!')
                 break
             time_now = end_time   
@@ -225,11 +217,6 @@ class core2leaf_strict:
         self.iteration()
         self.remove_duplicate()
         self.write_result()
-<<<<<<< HEAD
-        
-if __name__ == "__main__":
-    instance = core2leaf_strict('pc202012.v4.u.path.clean', 'core2leaf_strict.txt', None)
-=======
 
 def use(args):
     instance = args[0](args[1],args[2],args[3])
@@ -244,7 +231,6 @@ def c2f_strict_mp(args):
 
 if __name__ == "__main__":
     instance = core2leaf_strict('/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean', 'core2leaf_strict.txt', None)
->>>>>>> split2
     instance.run()
 
 
