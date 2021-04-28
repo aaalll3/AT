@@ -32,6 +32,7 @@ from TopoScope.topoFusion import TopoFusion
 from location import *
 from hierarchy import Hierarchy
 
+
 resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 log_location = abspath(join('./log',f'log_{time.time()}'))

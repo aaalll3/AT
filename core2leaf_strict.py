@@ -1,9 +1,6 @@
 import time
-<<<<<<< HEAD
-=======
 import multiprocessing as mp
 
->>>>>>> split2
 
 #######################################################################
 ### Core to leaf algorithm to infer AS relationships:               ###
