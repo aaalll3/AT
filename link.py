@@ -38,6 +38,7 @@ log_location = abspath(join('./log',f'log_{time.time()}'))
 logging.basicConfig(filename=log_location,level=logging.INFO)
 
 
+
 class Links(object):
     def __init__(self, org_name, peering_name,rel_file,prob_file,path_file,version=4):
         self.rel_file=rel_file

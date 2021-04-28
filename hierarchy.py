@@ -2,6 +2,7 @@ import os, copy
 from collections import defaultdict
 import networkx as nx
 
+
 class Hierarchy(object):
     def __init__(self, name,version=4):
         self.name = name
