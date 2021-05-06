@@ -89,6 +89,9 @@ class Struc():
         self.path_file=path_file
         self.irr_file=irr_file
 
+    def boost(self,ar_version,inf,outf):
+        self.infer_ar(ar_version,inf,outf)
+
     def c2f_loose(self,in_file,out_file, irr_file):
         my = core2leaf_loose(in_file,out_file,irr_file)
         my.run()

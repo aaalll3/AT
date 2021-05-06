@@ -1295,14 +1295,16 @@ if __name__ == "__main__":
         # '/home/lwd/Result/auxiliary/pc20201201.v4.sap2out',
         # '/home/lwd/Result/auxiliary/pc202012.v4.arout',
         # '/home/lwd/Result/auxiliary/pc20201201.v4.half.sap2out',
+        '/home/lwd/Result/auxiliary/pc20201201.v4.noirr.arout',
         '/home/lwd/Result/auxiliary/pc20201201.v4.arout',
         '/home/lwd/Result/BN/ar_vpg.rel.bn',
         '/home/lwd/Result/BN/lap2_vpg.rel.bn',
         '/home/lwd/Result/BN/sap2_vpg.rel.bn',
         '/home/lwd/Result/BN/stg.rel.bn',
+        '/home/lwd/Result/vote/tmp/ar_vpg.rel'
     ]
 #usage
-    e = comm(6)
+    e = comm(4)
     e.read(valid_file)
     # e.set_hnc_link(path_file)
     # quit()

@@ -189,11 +189,16 @@ class groupByVP():
         for i in range(int(sec_num/group_size)):
             self.VPGroup.append(sec_VP[i:i+group_size])
         pre_rest = pre_num%group_size
-        sec_rest = sec_num&group_size
+        sec_rest = sec_num%group_size
         if pre_rest + sec_rest > group_size:
             w_partial = pre_rest + sec_rest - group_size
-            self.VPGroup.append(sec_VP[-sec_rest:] + pre_VP[-pre_rest:-w_partial])
-            self.VPGroup.append(pre_VP[-w_partial:] + partial_VP)
+            if sec_rest < w_partial:
+                self.VPGroup.append(pre_VP[-pre_rest:-w_partial] + sec_VP[-sec_rest:])
+                self.VPGroup.append(pre_VP[-w_partial:] + partial_VP)
+            else:
+                self.VPGroup.append(pre_VP[-pre_rest:] + sec_VP[-sec_rest:-w_partial])
+                self.VPGroup.append(sec_VP[-w_partial:] + partial_VP)
+
         else:
             self.VPGroup.append(pre_VP + sec_VP + partial_VP)
         #FULL

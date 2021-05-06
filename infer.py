@@ -44,7 +44,7 @@ class Infeur(object):
         self.org_name = org_file if org_name else os.path.join(auxiliary,'20201001.as-org2info.txt')
         self.peering_name = peering_name if peering_name else os.path.join(auxiliary,'peeringdb.sqlite3')
         if version == 4:
-            self.ar_version = os.path.join(os.path.abspath('./TopoScope'),'asrank_irr.pl')
+            self.ar_version = os.path.join(os.path.abspath('./TopoScope'),'asrank_ori.pl')
         elif version == 6:
             self.ar_version = os.path.join(os.path.abspath('./TopoScope'),'asrank_irr_v6.pl')
         if not checke(self.boost_file):
@@ -106,7 +106,7 @@ class Infeur(object):
             print('\033[32mcleaned\033[0m')
         self.vpg.divide_VP(self.param['group_size'],self.fulldir_name,self.id)
 
-        self.orig.just_divide(self.path_file,self.id)
+        # self.orig.just_divide(self.path_file,self.id)
         p2 = time.time()
         print(f'\033[31mdone\033[0m prepare, takes {p2-p1:.2f} seconds')
 
@@ -132,29 +132,39 @@ class Infeur(object):
         args = []
         # run as rank separately
         for ii,oo in zip(in_files,out_files):
-            print(f'ar run@{ii}')
+            print(f'ar add@{ii}')
             args.append([self.struc.infer_ar,self.ar_version,ii,oo+'.ar'])
             # self.struc.infer_ar(self.ar_version,ii,oo+'.ar')
-            print('done')
         #tt
+        tp1 = time.time()
+        print(f'AS rank begin')
         with multiprocessing.Pool(96) as pool:
             pool.map(self.use3,args)
+        tp2 = time.time()
+        print(f'AS rank done, takes:{tp2-tp1:.2f}s')
 
         # for multiprocess
 
         # adding c2f arguments: function, path file, output file, iterations(now discard), version
         args = []
         for ii,oo in zip(in_files,out_files):
+            print(f'c2f add@{ii}')
             args.append([self.struc.c2f_loose,ii,oo+'.lap2',irr_file])
             args.append([self.struc.c2f_strict,ii,oo+'.sap2',irr_file])
 
         #tt
+        tp1 = time.time()
+        print(f'Core2leaf begin')
         with multiprocessing.Pool(96) as pool:
             pool.map(self.use3,args)
+        tp2 = time.time()
+        print(f'Core2leaf done, takes:{tp2-tp1:.2f}s')
         
+        tp1 = time.time()
         print(f'strong rule@{self.path_file}')
         self.struc.c2f_strong(self.path_file,os.path.join(self.fulldir_name,f'rel_{self.id}.stg'),None,1)
-        print('done sr')
+        tp2 = time.time()
+        print(f'Strong rule done, takes:{tp2-tp1:.2f}s')
 
     def vote(self):
         '''
@@ -244,8 +254,8 @@ class Infeur(object):
         if self.remove:
             print(f'\033[31mremove \033[0m {self.fulldir_name}')
             print(f'\033[31mremove \033[0m {self.fullvote_name}')
-            os.system(f'rm -r {self.fulldir_name}')
-            os.system(f'rm -r {self.fullvote_name}')
+            # os.system(f'rm -r {self.fulldir_name}')
+            # os.system(f'rm -r {self.fullvote_name}')
 
     def infer(self):
         p1 = time.time()
@@ -265,7 +275,7 @@ class Infeur(object):
 if __name__ == '__main__':
     path_file =os.path.join(pure_path_dir,'pc20201201.v4.u.path.clean')
     irr_file='/home/lwd/Result/auxiliary/irr.txt'
-    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
+    boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.noirr.arout'
     org_name= os.path.join(auxiliary,'20201001.as-org2info.txt')
     peering_name= os.path.join(auxiliary,'peeringdb.sqlite3')
     infeur = Infeur(path_file=path_file,irr_file=irr_file,boost_file=boost_file,org_file=org_name,peering_file=peering_name,id='whocare',working_dir_name='tmp',version=4,remove=True)
