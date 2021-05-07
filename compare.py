@@ -1136,13 +1136,21 @@ if __name__ == "__main__":
         '/home/lwd/Result/BN/ar_tsv.rel.bn',
         # '/home/lwd/Result/BN/ar_apv.rel.bn',
         # '/home/lwd/Result/BN/ar_bv.rel.bn',
-        '/home/lwd/Result/BN/stg.rel.bn',
-        '/home/lwd/Result/BN/ap2_tsv.rel.bn',
+        # '/home/lwd/Result/BN/stg.rel.bn',
+        # '/home/lwd/Result/BN/ap2_tsv.rel.bn',
         # '/home/lwd/Result/BN/ap2_apv.rel.bn',
         # '/home/lwd/Result/BN/ap2_bv.rel.bn',
 
-        # '/home/lwd/Result/vote/tsv/ar_tsv.rel',
+        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
+        '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
+        '/home/lwd/Result/vote/apv/ap2_apv.rel',
+        '/home/lwd/Result/NN/ap2_apv.fea.csv.nn',
+        '/home/lwd/Result/NN/ap2_apv_nn_pv.rel',
+        
         # '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
+        '/home/lwd/AT/ar_nn.rel'
+        
+
     ]
     
     noirr=[
@@ -1302,7 +1310,7 @@ if __name__ == "__main__":
         '/home/lwd/Result/BN/stg.rel.bn',
     ]
 #usage
-    e = comm(6)
+    e = comm(4)
     e.read(valid_file)
     # e.set_hnc_link(path_file)
     # quit()
@@ -1320,7 +1328,7 @@ if __name__ == "__main__":
     # go = noirr[-2:]
     # go = tmp
     # go = s1_list
-    go = seed
+    go = s2_list
     for ff in go:
         last_name= ff.split('/')[-1]
         test_file_list.append(f'/home/lwd/Result/cmp/{last_name}')

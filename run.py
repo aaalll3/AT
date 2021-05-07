@@ -1558,11 +1558,16 @@ if __name__=='__main__':
     outname=tmp.replace('.rel','.fea.csv')
     outname=join('/home/lwd/Result/AP_working',outname)
 
-    inf = '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
-    outf = '/home/lwd/Result/auxiliary/pc20201201.v4.half.sap2out'
+    outname= join('/home/lwd/Result/NN','ap2_apv_nn_pv.rel')
+    checke('/home/lwd/Result/AP_working/ap2_apv.fea.csv')
+
+    # Stage2.NN_go('/home/lwd/Result/AP_working/ap2_apv.fea.csv',outname)
+    
+    # inf = '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
+    # outf = '/home/lwd/Result/auxiliary/pc20201201.v4.half.sap2out'
     # inf = '/home/lwd/Result/TS_working/path_20201201_vp0.path'
     # outf = '/home/lwd/Result/TS_working/rel_20201201_vp0.ap2.half'
-    struc.apollo_it(inf,outf)
+    # struc.apollo_it(inf,outf)
 
     # path_file='/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
     # oneday = set()
@@ -1587,9 +1592,6 @@ if __name__=='__main__':
     #         allday.add((ASes[i+1],ASes[i]))
     # print('all',len(allday))
 
-    # outname= join('/home/lwd/Result/NN','ap2_apv_nn_pv.rel')
-    # checke('/home/lwd/Result/AP_working/ap2_apv.fea.csv')
-    # NN_go('/home/lwd/Result/AP_working/ap2_apv.fea.csv',outname)
 
 
 if __name__=='__main__':
