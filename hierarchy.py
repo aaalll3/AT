@@ -35,7 +35,7 @@ class Hierarchy(object):
                     if rel == '-1':
                         self.customer[asn1].add(asn2)
                         self.provider[asn2].add(asn1)
-                    elif rel == '0' or rel == '1':
+                    elif rel == '0':
                         self.peer[asn1].add(asn2)
                         self.peer[asn2].add(asn1)
                     elif rel == '1':

@@ -1,0 +1,437 @@
+Hinfo: clique:19,high:18560,mid:18560/39713/9896/703,low:119,stub:631
+Hinfo: clique:7,high:5966,mid:5966/12568/3821/526,low:197,stub:1765
+[19, 18180, 38286, 9264, 643, 118, 7, 912, 464, 1675]
+[7, 5424, 9302, 2538, 398, 168, 51, 598, 1171, 2482]
+0.000273 0.261327 0.550339 0.133165 0.009243 0.001696 0.000101 0.013109 0.006670 0.024077 
+0.000316 0.244998 0.420164 0.114639 0.017977 0.007588 0.002304 0.027011 0.052893 0.112110 
+as number v4:69568 v6:22139
+### select0
+check common as's kl divergence over updates
+non zeros a:[7m     19[0m [7mb:      7[0m intersect [7m      2[0m kl:[7m1[0m
+Before in v4 struct:[19, 0, 0, 0, 0, 0, 0, 0, 0, 0], num 262515922 per13816627.47368421
+Before in v6 struct:[7, 0, 0, 0, 0, 0, 0, 0, 0, 0], num 385607015 per55086716.428571425
+After in v4 struct:[2, 0, 0, 0, 0, 0, 0, 0, 0, 0], num  24981883 per12490941.5
+After in v6 struct:[2, 0, 0, 0, 0, 0, 0, 0, 0, 0], num 112779314 per56389657.0
+check common as's kl divergence over aa updates
+non zeros a:[7m     19[0m [7mb:      7[0m intersect [7m      2[0m kl:[7m1[0m
+Before in v4 struct:[19, 0, 0, 0, 0, 0, 0, 0, 0, 0], num 262506699 per13816142.05263158
+Before in v6 struct:[7, 0, 0, 0, 0, 0, 0, 0, 0, 0], num 385600645 per55085806.428571425
+After in v4 struct:[2, 0, 0, 0, 0, 0, 0, 0, 0, 0], num  24981297 per12490648.5
+After in v6 struct:[2, 0, 0, 0, 0, 0, 0, 0, 0, 0], num 112773776 per56386888.0
+check common as's kl divergence over aa diff updates
+non zeros a:[7m     19[0m [7mb:      7[0m intersect [7m      2[0m kl:[7m1[0m
+Before in v4 struct:[19, 0, 0, 0, 0, 0, 0, 0, 0, 0], num  69463610 per3655979.4736842103
+Before in v6 struct:[7, 0, 0, 0, 0, 0, 0, 0, 0, 0], num  23664328 per3380618.285714286
+After in v4 struct:[2, 0, 0, 0, 0, 0, 0, 0, 0, 0], num   4707292 per2353646.0
+After in v6 struct:[2, 0, 0, 0, 0, 0, 0, 0, 0, 0], num   6755367 per3377683.5
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select1
+check common as's kl divergence over updates
+non zeros a:[7m  18180[0m [7mb:   5424[0m intersect [7m   4070[0m kl:[7m1[0m
+Before in v4 struct:[0, 18180, 0, 0, 0, 0, 0, 0, 0, 0], num31623591166 per1739471.4612761277
+Before in v6 struct:[0, 5424, 0, 0, 0, 0, 0, 0, 0, 0], num330807606808 per60989603.025073744
+After in v4 struct:[0, 4070, 0, 0, 0, 0, 0, 0, 0, 0], num13409250785 per3294656.2125307126
+After in v6 struct:[0, 4070, 0, 0, 0, 0, 0, 0, 0, 0], num243010626898 per59707770.73660934
+check common as's kl divergence over aa updates
+non zeros a:[7m  18180[0m [7mb:   5424[0m intersect [7m   4070[0m kl:[7m1[0m
+Before in v4 struct:[0, 18180, 0, 0, 0, 0, 0, 0, 0, 0], num31622551285 per1739414.2621012102
+Before in v6 struct:[0, 5424, 0, 0, 0, 0, 0, 0, 0, 0], num330806182509 per60989340.43307522
+After in v4 struct:[0, 4070, 0, 0, 0, 0, 0, 0, 0, 0], num13408663086 per3294511.8147420147
+After in v6 struct:[0, 4070, 0, 0, 0, 0, 0, 0, 0, 0], num243009519845 per59707498.73341523
+check common as's kl divergence over aa diff updates
+non zeros a:[7m  18163[0m [7mb:   5415[0m intersect [7m   4060[0m kl:[7m1[0m
+Before in v4 struct:[0, 18163, 0, 0, 0, 0, 0, 0, 0, 0], num3621902076 per199411.00456972967
+Before in v6 struct:[0, 5415, 0, 0, 0, 0, 0, 0, 0, 0], num20989777639 per3876228.5575253926
+After in v4 struct:[0, 4060, 0, 0, 0, 0, 0, 0, 0, 0], num2170363657 per534572.3293103449
+After in v6 struct:[0, 4060, 0, 0, 0, 0, 0, 0, 0, 0], num14941817424 per3680250.5970443347
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select2
+check common as's kl divergence over updates
+non zeros a:[7m  38286[0m [7mb:   9302[0m intersect [7m   7463[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 38286, 0, 0, 0, 0, 0, 0, 0], num85685151709 per2238028.305620854
+Before in v6 struct:[0, 0, 9302, 0, 0, 0, 0, 0, 0, 0], num567969566201 per61058865.426897444
+After in v4 struct:[0, 0, 7463, 0, 0, 0, 0, 0, 0, 0], num23700869196 per3175783.089374246
+After in v6 struct:[0, 0, 7463, 0, 0, 0, 0, 0, 0, 0], num454882924986 per60951751.97454107
+check common as's kl divergence over aa updates
+non zeros a:[7m  38286[0m [7mb:   9302[0m intersect [7m   7463[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 38286, 0, 0, 0, 0, 0, 0, 0], num85683319360 per2237980.446116074
+Before in v6 struct:[0, 0, 9302, 0, 0, 0, 0, 0, 0, 0], num567966797006 per61058567.72801548
+After in v4 struct:[0, 0, 7463, 0, 0, 0, 0, 0, 0, 0], num23700216404 per3175695.6189200054
+After in v6 struct:[0, 0, 7463, 0, 0, 0, 0, 0, 0, 0], num454880741752 per60951459.43347179
+check common as's kl divergence over aa diff updates
+non zeros a:[7m  38194[0m [7mb:   9234[0m intersect [7m   7393[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 38194, 0, 0, 0, 0, 0, 0, 0], num7345264681 per192314.62221814945
+Before in v6 struct:[0, 0, 9234, 0, 0, 0, 0, 0, 0, 0], num38052970932 per4120962.8473034436
+After in v4 struct:[0, 0, 7393, 0, 0, 0, 0, 0, 0, 0], num2173351973 per293974.296361423
+After in v6 struct:[0, 0, 7393, 0, 0, 0, 0, 0, 0, 0], num30710351824 per4153976.981468957
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select3
+check common as's kl divergence over updates
+non zeros a:[7m   9264[0m [7mb:   2538[0m intersect [7m   1174[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 9264, 0, 0, 0, 0, 0, 0], num28082387541 per3031345.8053756477
+Before in v6 struct:[0, 0, 0, 2538, 0, 0, 0, 0, 0, 0], num159804770968 per62964842.77698976
+After in v4 struct:[0, 0, 0, 1174, 0, 0, 0, 0, 0, 0], num5558246848 per4734452.170357752
+After in v6 struct:[0, 0, 0, 1174, 0, 0, 0, 0, 0, 0], num76325251220 per65012990.81771721
+check common as's kl divergence over aa updates
+non zeros a:[7m   9264[0m [7mb:   2538[0m intersect [7m   1174[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 9264, 0, 0, 0, 0, 0, 0], num28081793194 per3031281.648747841
+Before in v6 struct:[0, 0, 0, 2538, 0, 0, 0, 0, 0, 0], num159804160354 per62964602.188337274
+After in v4 struct:[0, 0, 0, 1174, 0, 0, 0, 0, 0, 0], num5557951183 per4734200.326235094
+After in v6 struct:[0, 0, 0, 1174, 0, 0, 0, 0, 0, 0], num76324986887 per65012765.661839865
+check common as's kl divergence over aa diff updates
+non zeros a:[7m   9220[0m [7mb:   2507[0m intersect [7m   1164[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 9220, 0, 0, 0, 0, 0, 0], num2668918137 per289470.5137744035
+Before in v6 struct:[0, 0, 0, 2507, 0, 0, 0, 0, 0, 0], num10150839880 per4048998.755484643
+After in v4 struct:[0, 0, 0, 1164, 0, 0, 0, 0, 0, 0], num1011157945 per868692.3926116838
+After in v6 struct:[0, 0, 0, 1164, 0, 0, 0, 0, 0, 0], num4877417449 per4190221.1761168386
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select4
+check common as's kl divergence over updates
+non zeros a:[7m    643[0m [7mb:    398[0m intersect [7m     53[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 643, 0, 0, 0, 0, 0], num1681183756 per2614593.7107309485
+Before in v6 struct:[0, 0, 0, 0, 398, 0, 0, 0, 0, 0], num23386771956 per58760733.557788946
+After in v4 struct:[0, 0, 0, 0, 53, 0, 0, 0, 0, 0], num 190831499 per3600594.320754717
+After in v6 struct:[0, 0, 0, 0, 53, 0, 0, 0, 0, 0], num3665243710 per69155541.6981132
+check common as's kl divergence over aa updates
+non zeros a:[7m    643[0m [7mb:    398[0m intersect [7m     53[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 643, 0, 0, 0, 0, 0], num1681151581 per2614543.6718507
+Before in v6 struct:[0, 0, 0, 0, 398, 0, 0, 0, 0, 0], num23386693482 per58760536.386934675
+After in v4 struct:[0, 0, 0, 0, 53, 0, 0, 0, 0, 0], num 190829844 per3600563.0943396227
+After in v6 struct:[0, 0, 0, 0, 53, 0, 0, 0, 0, 0], num3665233645 per69155351.79245283
+check common as's kl divergence over aa diff updates
+non zeros a:[7m    642[0m [7mb:    386[0m intersect [7m     52[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 642, 0, 0, 0, 0, 0], num 123622138 per192557.84735202492
+Before in v6 struct:[0, 0, 0, 0, 386, 0, 0, 0, 0, 0], num1448413809 per3752367.3808290157
+After in v4 struct:[0, 0, 0, 0, 52, 0, 0, 0, 0, 0], num  11732032 per225616.0
+After in v6 struct:[0, 0, 0, 0, 52, 0, 0, 0, 0, 0], num 243581609 per4684261.711538462
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select5
+check common as's kl divergence over updates
+non zeros a:[7m    118[0m [7mb:    168[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 118, 0, 0, 0, 0], num 314996129 per2669458.720338983
+Before in v6 struct:[0, 0, 0, 0, 0, 168, 0, 0, 0, 0], num9050665891 per53873011.25595238
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aa updates
+non zeros a:[7m    118[0m [7mb:    168[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 118, 0, 0, 0, 0], num 314980406 per2669325.474576271
+Before in v6 struct:[0, 0, 0, 0, 0, 168, 0, 0, 0, 0], num9050639124 per53872851.928571425
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aa diff updates
+non zeros a:[7m    118[0m [7mb:    157[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 118, 0, 0, 0, 0], num  41191917 per349084.0423728814
+Before in v6 struct:[0, 0, 0, 0, 0, 157, 0, 0, 0, 0], num 542789921 per3457260.6433121017
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select6
+check common as's kl divergence over updates
+non zeros a:[7m      7[0m [7mb:     51[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 7, 0, 0, 0], num  13430163 per1918594.7142857143
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 51, 0, 0, 0], num3026093455 per59335165.78431372
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aa updates
+non zeros a:[7m      7[0m [7mb:     51[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 7, 0, 0, 0], num  13430059 per1918579.857142857
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 51, 0, 0, 0], num3026085435 per59335008.52941176
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aa diff updates
+non zeros a:[7m      7[0m [7mb:     51[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 7, 0, 0, 0], num    755448 per107921.14285714286
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 51, 0, 0, 0], num 183333868 per3594781.725490196
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select7
+check common as's kl divergence over updates
+non zeros a:[7m    912[0m [7mb:    598[0m intersect [7m    136[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 912, 0, 0], num1548929778 per1698387.9144736843
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 598, 0, 0], num33000771329 per55185236.336120404
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 136, 0, 0], num 218851204 per1609200.0294117648
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 136, 0, 0], num7684301925 per56502220.0367647
+check common as's kl divergence over aa updates
+non zeros a:[7m    912[0m [7mb:    598[0m intersect [7m    136[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 912, 0, 0], num1548883199 per1698336.841008772
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 598, 0, 0], num33000643588 per55185022.72240803
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 136, 0, 0], num 218840330 per1609120.0735294118
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 136, 0, 0], num7684266550 per56501959.926470585
+check common as's kl divergence over aa diff updates
+non zeros a:[7m    896[0m [7mb:    574[0m intersect [7m    132[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 896, 0, 0], num 202830392 per226373.20535714287
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 574, 0, 0], num2052803849 per3576313.325783972
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 132, 0, 0], num  12193855 per92377.68939393939
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 132, 0, 0], num 500893974 per3794651.3181818184
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select8
+check common as's kl divergence over updates
+non zeros a:[7m    464[0m [7mb:   1171[0m intersect [7m     14[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 464, 0], num 563091884 per1213560.0948275863
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 1171, 0], num62478823809 per53355101.45943638
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 14, 0], num   8306042 per593288.7142857143
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 14, 0], num 734457614 per52461258.14285714
+check common as's kl divergence over aa updates
+non zeros a:[7m    464[0m [7mb:   1171[0m intersect [7m     14[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 464, 0], num 563071068 per1213515.2327586208
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 1171, 0], num62478644400 per53354948.24935952
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 14, 0], num   8305967 per593283.3571428572
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 14, 0], num 734455852 per52461132.28571428
+check common as's kl divergence over aa diff updates
+non zeros a:[7m    439[0m [7mb:   1140[0m intersect [7m     12[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 439, 0], num  57610045 per131230.1708428246
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 1140, 0], num3715357450 per3259085.48245614
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 12, 0], num    566776 per47231.333333333336
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 12, 0], num  40713712 per3392809.3333333335
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+### select9
+check common as's kl divergence over updates
+non zeros a:[7m   1675[0m [7mb:   2482[0m intersect [7m    421[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 1675], num4765433624 per2845034.999402985
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 2482], num63876156806 per25735760.19580983
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 421], num2301442653 per5466609.627078385
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 421], num21577086855 per51251987.779097386
+check common as's kl divergence over aa updates
+non zeros a:[7m   1675[0m [7mb:   2482[0m intersect [7m    421[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 1675], num4764952544 per2844747.7874626867
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 2482], num63875231791 per25735387.506446414
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 421], num2301135513 per5465880.078384798
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 421], num21576740244 per51251164.47505938
+check common as's kl divergence over aa diff updates
+non zeros a:[7m   1557[0m [7mb:   2056[0m intersect [7m    392[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 1557], num 426517492 per273935.4476557482
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 2056], num4053866713 per1971725.0549610895
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 392], num 221312540 per564572.806122449
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 392], num1328418889 per3388823.6964285714
+check common as's kl divergence over ww updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over aw updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+check common as's kl divergence over wa diff updates
+non zeros a:[7m      0[0m [7mb:      0[0m intersect [7m      0[0m kl:[7m1[0m
+Before in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+Before in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v4 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0
+After in v6 struct:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], num         0 per0

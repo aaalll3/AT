@@ -403,7 +403,7 @@ class Struc():
         print(f'ap_it takes {p3-p1}s')
 
     @staticmethod
-    def apollo_copy(irr_file, filelist):
+    def apollo_copy(irr_file, filelist,outfile='/home/lwd/Result/AP_working/stage1_copy.rel'):
             # irr
         with open(irr_file,'r') as f:
             lines = f.readlines()
@@ -519,8 +519,9 @@ class Struc():
 
         #dst
         print('saving')
-        f = open('./stage1_res.txt','w')
-        f.write(str(result))
+        f = open(outfile,'w')
+        for k,v in result.items():
+            f.write(f'{k[0]}|{k[1]}|{v}\n')
         f.close()
         f = open('./wrong_path.txt','w')
         f.write(str(wrong_path))
@@ -1549,19 +1550,56 @@ def slow_start():
 
 if __name__=='__main__':
     print('start preview')
+    irr_file = '/home/lwd/Result/auxiliary/high_trust.txt'
+    low = '/home/lwd/Result/auxiliary/low_trust.txt'
+    high = '/home/lwd/Result/auxiliary/low_trust.txt'
     struc = Struc()
     struc.read_irr(irr_file)
-    path_file='/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
+    file_num=14
+    all_date_path = [
+        '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201208.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201215.v4.u.path.clean',
+        '/home/lwd/RIB.test/path.test/pc20201222.v4.u.path.clean',
+    ]
+    all_path = [f'/home/lwd/Result/TS_working/path_wholemonth_vp{i}.path' for i in range(0,file_num)]
+    stage1_file=[f'/home/lwd/Result/AP_working/rel_wholemonth_vp{i}.apc' for i in range(0,file_num)]
+    path_file='/home/lwd/RIB.test/path.test/pc202012.v4.u.path.clean'
     peeringdb_file='/home/lwd/Result/auxiliary/peeringdb.sqlite3'
-    name = '/home/lwd/Result/vote/apv/ap2_apv.rel'
+    go = []
+
+
+    # for idx,path in enumerate(all_path):
+        # go.append([Struc.apollo_copy,irr_file,[path],f'/home/lwd/Result/AP_working/rel_wholemonth_vp{idx}.apc'])
+        # Struc.apollo_copy(irr_file,[path],f'/home/lwd/Result/AP_working/rel_wholemonth_vp{idx}.apc')
+    go.append([Struc.apollo_copy,low,all_date_path,f'/home/lwd/Result/AP_working/low.apc'])
+    go.append([Struc.apollo_copy,high,all_date_path,f'/home/lwd/Result/AP_working/high.apc'])
+    def use_go(args):
+        func =args[0]
+        irr=args[1]
+        path_list = args[2]
+        outn = args[3]
+        func(irr,path_list,outn)
+    with multiprocessing.Pool(96) as pool:
+        pool.map(use_go,go)
+    # output_file=f'/home/lwd/Result/vote/tsv/apc_vpg.rel'
+    # struc_ap_tsv = Struc()
+    # struc_ap_tsv.read_irr(irr_file)
+    # struc_ap_tsv.topoFusion = TopoFusion(14,dir,'wholemonth',path_file)
+    # for file in stage1_file:
+    #     checke(file)
+    # struc_ap_tsv.topoFusion.vote_among(stage1_file,output_file)
+    quit()
+    name = '/home/lwd/Result/AP_working/stage1_copy.rel'
     tmp = name.split('/')[-1]
     outname=tmp.replace('.rel','.fea.csv')
     outname=join('/home/lwd/Result/AP_working',outname)
-
-    outname= join('/home/lwd/Result/NN','ap2_apv_nn_pv.rel')
-    checke('/home/lwd/Result/AP_working/ap2_apv.fea.csv')
-
-    # Stage2.NN_go('/home/lwd/Result/AP_working/ap2_apv.fea.csv',outname)
+    struc.prepare_AP(path_file,peeringdb_file,name,outname)
+    outname= join('/home/lwd/Result/NN','stage1_copy_nn.rel')
+    checke('/home/lwd/Result/AP_working/stage1_copy.fea.csv')
+    ss2 = Stage2()
+    ss2.NN_go('/home/lwd/Result/AP_working/stage1_copy.fea.csv',outname)
+    quit()
     
     # inf = '/home/lwd/RIB.test/path.test/pc20201201.v4.u.path.clean'
     # outf = '/home/lwd/Result/auxiliary/pc20201201.v4.half.sap2out'
@@ -1593,7 +1631,6 @@ if __name__=='__main__':
     # print('all',len(allday))
 
 
-
 if __name__=='__main__':
     quit()
     print('start v6')
@@ -1608,7 +1645,7 @@ if __name__=='__main__':
     print(f'v6 prob {v6prob}')
     print(f'v6 bn {v6bn}')
 
-    irr_file='/home/lwd/Result/auxiliary/irr.txt'
+    irr_file='/home/lwd/Result/auxiliary/low_trust.txt'
     boost_file='/home/lwd/Result/auxiliary/pc20201201.v4.arout'
     s_dir='/home/lwd/RIB.test/path.test'
     r_dir='/home/lwd/Result'

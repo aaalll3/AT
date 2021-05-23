@@ -1141,15 +1141,24 @@ if __name__ == "__main__":
         # '/home/lwd/Result/BN/ap2_apv.rel.bn',
         # '/home/lwd/Result/BN/ap2_bv.rel.bn',
 
-        '/home/lwd/Result/vote/tsv/ar_tsv.rel',
-        '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
-        '/home/lwd/Result/vote/apv/ap2_apv.rel',
-        '/home/lwd/Result/NN/ap2_apv.fea.csv.nn',
-        '/home/lwd/Result/NN/ap2_apv_nn_pv.rel',
+        # '/home/lwd/Result/vote/tsv/ar_tsv.rel',
+        # '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
+        # '/home/lwd/Result/vote/apv/ap2_apv.rel',
+        # '/home/lwd/Result/NN/ap2_apv.fea.csv.nn',
+        # '/home/lwd/Result/NN/ap2_apv_nn_pv.rel',
         
         # '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
-        '/home/lwd/AT/ar_nn.rel'
-        
+        # '/home/lwd/AT/ar_nn.rel',
+        # '/home/lwd/Result/NN/ap2_apv_nn.rel',
+        # '/home/lwd/Result/NN/ar_tsv.fea.csv.nn',
+        # '/home/lwd/Result/NN/ap2_tsv.fea.csv.nn',
+        # '/home/lwd/Result/NN/ar_apv.fea.csv.nn',
+        # '/home/lwd/Result/NN/stage1_copy_nn.rel',
+        # '/home/lwd/Result/AP_working/stage1_copy.rel',
+        # '/home/lwd/Result/vote/tsv/apc_vpg.rel',
+        # '/home/lwd/Result/NN/stage1_copy_nn.rel',
+        '/home/lwd/Result/AP_working/high.apc',
+        '/home/lwd/Result/AP_working/low.apc'
 
     ]
     
